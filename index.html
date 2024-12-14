@@ -126,11 +126,6 @@
             fill: currentColor;
         }
 
-        @supports (-webkit-overflow-scrolling: touch) {
-            svg {
-                fill: #000; /* Example color for fallback */
-            }
-        }
     </style>
 </head>
 <body>
@@ -246,11 +241,13 @@
                 /* minusButton.textContent = "-"; */
                 /* use a SVG icon instead of text */
                 minusButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="#fff" d="M5 13H19V11H5V13Z"/></svg>`;
-                /* set the button color using the baseColor and darken it by 40% */
-                minusButton.style.backgroundColor = darkenColor(baseColor, 40);
+                /* set the button color using the baseColor and darken it by 30% */
+                minusButton.style.backgroundColor = darkenColor(baseColor, 30);
                 minusButton.onclick = () => {
                     counterValue.value = Math.max(0, parseInt(counterValue.value) - 1);
                 };
+                /* move the button to the front */
+                minusButton.style.zIndex = 1;
 
                 // Spacer between counter and "-" button
                 const valueSpacer = document.createElement("div");
@@ -266,11 +263,13 @@
                 /* plusButton.textContent = "+"; */
                 /* use a SVG icon instead of text */
                 plusButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="#fff" d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>`;
-                /* set the button color using the baseColor and darken it by 40% */
-                plusButton.style.backgroundColor = darkenColor(baseColor, 40);
+                /* set the button color using the baseColor and darken it by 30% */
+                plusButton.style.backgroundColor = darkenColor(baseColor, 30);
                 plusButton.onclick = () => {
                     counterValue.value = parseInt(counterValue.value) + 1;
                 };
+                /* move the button to the front */
+                plusButton.style.zIndex = 1;
 
                 row.appendChild(counterName);
                 row.appendChild(counterValue);
