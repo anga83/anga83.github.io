@@ -19,6 +19,14 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
+        /* Adjust for mobile portrait screens */
+        @media (max-width: 768px) and (orientation: portrait) {
+            body {
+                align-items: flex-start; /* Align content to the top */
+                padding-top: 20vh; /* Add extra padding at the top */
+            }
+        }
+
         .dark-mode {
             background-color: #333;
             color: #f4f4f4;
