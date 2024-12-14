@@ -1,14 +1,210 @@
 <!DOCTYPE html>
-<html lang="de">
-
+<html lang="en">
 <head>
-<meta charset="UTF-8"> 
-<title>404</title>
-</head>
- 
-<body>
-<p>404</p>
-</body>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Counters</title>
+    <style>
+        * {
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+        }
 
-</html> 
-	
+        .container {
+            width: 95%;
+            max-width: 500px;
+            margin: auto;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            color: #fff;
+        }
+
+        .counter-name {
+            flex: 1;
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .counter-name input {
+            width: calc(100% - 20px); /* Shortened width */
+            font-size: 17px;
+            border: none;
+            border-radius: 3px;
+            padding: 5px;
+            /* color: #2c3e50; */
+            color: #f9f9f9;
+        }
+
+        .counter-value {
+            width: 50px;
+            text-align: center;
+            font-size: 20px; /* Increased font size */
+            font-weight: bold;
+            background-color: #fff;
+            /* color: #000; */
+            color: #222222;
+            border: none;
+            border-radius: 3px;
+            padding: 5px;
+        }
+
+        .counter-value[readonly] {
+            pointer-events: none;
+        }
+
+        .button {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 3px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #8e44ad;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        .button-spacer {
+            width: 10px; /* Space between buttons */
+        }
+
+        .value-spacer {
+            width: 10px; /* Space between counter and "-" button */
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="counterContainer">
+        <!-- Rows will be generated dynamically here -->
+    </div>
+
+    <script>
+        // Predefined color list
+        const colors = [
+            "#3498db", "#e74c3c", "#2ecc71", "#f39c12", "#9b59b6", 
+            "#1abc9c", "#34495e", "#16a085", "#2980b9", "#8e44ad", 
+            "#27ae60", "#e67e22", "#c0392b", "#d35400", "#7f8c8d", "#2c3e50"
+        ];
+
+        /**
+         * Lightens a hex color by a percentage.
+         * @param {string} color - The hex color code.
+         * @param {number} percent - The percentage to lighten (0-100).
+         * @returns {string} - The lightened hex color code.
+         */
+        function lightenColor(color, percent) {
+            const num = parseInt(color.slice(1), 16);
+            const r = Math.min(255, Math.floor((num >> 16) + (255 - (num >> 16)) * (percent / 100)));
+            const g = Math.min(255, Math.floor(((num >> 8) & 0x00ff) + (255 - ((num >> 8) & 0x00ff)) * (percent / 100)));
+            const b = Math.min(255, Math.floor((num & 0x0000ff) + (255 - (num & 0x0000ff)) * (percent / 100)));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        /**
+         * Parse URL parameters into a list of counter names.
+         * Example URL: `index.html?names=Anja,Michaela,Leonie`
+         * @returns {Array} Array of names or an empty array if no parameters exist.
+         */
+        function getCounterNamesFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const names = urlParams.get("names");
+            return names ? names.split(",") : [];
+        }
+
+        /**
+         * Initializes counters with the given names.
+         * @param {Array} counterNames - List of counter names to initialize.
+         */
+        function initializeCounters(counterNames = []) {
+            const container = document.getElementById("counterContainer");
+
+            // If no names are provided, create empty fields
+            if (counterNames.length === 0) {
+                counterNames = Array(8).fill("");
+            }
+
+            counterNames.forEach((name, index) => {
+                const row = document.createElement("div");
+                row.className = "row";
+                const baseColor = colors[index % colors.length];
+                row.style.backgroundColor = baseColor;
+
+                // Editable name field with lightened background
+                const counterName = document.createElement("div");
+                counterName.className = "counter-name";
+                const nameInput = document.createElement("input");
+                nameInput.type = "text";
+                nameInput.value = name; // Prefill with provided name or leave empty
+                nameInput.style.backgroundColor = lightenColor(baseColor, 20); // 20% lighter
+                counterName.appendChild(nameInput);
+
+                // Counter value field
+                const counterValue = document.createElement("input");
+                counterValue.type = "text";
+                counterValue.className = "counter-value";
+                counterValue.value = 0;
+                counterValue.readOnly = true;
+
+                // Minus button
+                const minusButton = document.createElement("button");
+                minusButton.className = "button";
+                minusButton.textContent = "-";
+                minusButton.onclick = () => {
+                    counterValue.value = Math.max(0, parseInt(counterValue.value) - 1);
+                };
+
+                // Spacer between counter and "-" button
+                const valueSpacer = document.createElement("div");
+                valueSpacer.className = "value-spacer";
+
+                // Spacer between buttons
+                const buttonSpacer = document.createElement("div");
+                buttonSpacer.className = "button-spacer";
+
+                // Plus button
+                const plusButton = document.createElement("button");
+                plusButton.className = "button";
+                plusButton.textContent = "+";
+                plusButton.onclick = () => {
+                    counterValue.value = parseInt(counterValue.value) + 1;
+                };
+
+                row.appendChild(counterName);
+                row.appendChild(counterValue);
+                row.appendChild(valueSpacer);
+                row.appendChild(minusButton);
+                row.appendChild(buttonSpacer);
+                row.appendChild(plusButton);
+
+                container.appendChild(row);
+            });
+        }
+
+        // Parse names from URL and initialize counters
+        const counterNames = getCounterNamesFromUrl();
+        initializeCounters(counterNames);
+    </script>
+</body>
+</html>
