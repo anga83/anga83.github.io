@@ -34,8 +34,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            margin: 5px 0;
+            padding: 12px;
+            margin: 6px 0;
             border-radius: 5px;
             color: #fff;
         }
@@ -48,6 +48,7 @@
 
         .counter-name input {
             width: calc(100% - 20px); /* Shortened width */
+            height: 26px;
             font-size: 17px;
             border: none;
             border-radius: 3px;
@@ -61,7 +62,8 @@
             text-align: center;
             font-size: 20px; /* Increased font size */
             font-weight: bold;
-            background-color: #fff;
+            /* background-color: #fff; */
+            background-color: currentColor;
             /* color: #000; */
             color: #222222;
             border: none;
@@ -74,8 +76,8 @@
         }
 
         .button {
-            width: 35px;
-            height: 35px;
+            width: 36px;
+            height: 36px;
             border: none;
             border-radius: 3px;
             font-size: 18px;
@@ -247,6 +249,7 @@
                 const counterValue = document.createElement("input");
                 counterValue.type = "text";
                 counterValue.className = "counter-value";
+                counterValue.style.backgroundColor = lightenColor(baseColor, 60); // 60% lighter
                 counterValue.value = 0;
                 counterValue.readOnly = true;
 
