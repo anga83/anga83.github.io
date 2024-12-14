@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsive Counters</title>
+    <title>Bookmark Counter</title>
     <style>
         * {
             font-family: 'Segoe UI', Roboto, system-ui, -apple-system, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -16,6 +16,12 @@
             align-items: center;
             min-height: 100vh;
             background-color: #f4f4f4;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .dark-mode {
+            background-color: #333;
+            color: #f4f4f4;
         }
 
         .container {
@@ -93,11 +99,48 @@
         .value-spacer {
             width: 10px; /* Space between counter and "-" button */
         }
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 17px;
+            right: 8px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .dark-mode-toggle:hover {
+            opacity: 1;
+        }
+
+        #moon-icon, #sun-icon {
+            position: absolute; /* Both icons will be positioned relative to their container */
+            top: 17px;
+            right: 8px;
+            transform: translate(-50%, -50%); /* Center the icons */
+        }
+
+        svg {
+            width: 28px;
+            height: 28px;
+            fill: currentColor;
+        }
     </style>
 </head>
 <body>
     <div class="container" id="counterContainer">
         <!-- Rows will be generated dynamically here -->
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="dark-mode-toggle" onclick="toggleDarkMode()">
+        <svg id="moon-icon" viewBox="0 0 958.984 977.051" style="opacity: 1;">
+            <path d="M755.371 662.598C491.211 662.598 322.266 497.07 322.266 232.422C322.266 171.875 335.449 98.1445 353.027 57.6172C357.422 46.3867 358.398 39.0625 358.398 34.668C358.398 21.9727 348.633 7.32422 329.102 7.32422C323.73 7.32422 312.012 8.30078 300.781 12.6953C121.094 84.4727 0 273.926 0 472.168C0 750.977 226.074 977.051 504.883 977.051C715.332 977.051 891.602 849.609 953.613 691.406C958.008 679.688 958.984 667.48 958.984 663.086C958.984 644.531 944.336 632.812 930.664 632.812C924.316 632.812 918.945 634.277 909.668 637.207C871.582 649.414 815.43 662.598 755.371 662.598Z"/>
+        </svg>
+        <svg id="sun-icon" viewBox="0 0 1056.15 1060.06" style="opacity: 0;">
+            <path d="M528.32 189.941C551.27 189.941 570.312 170.898 570.312 147.461L570.312 42.4805C570.312 19.043 551.27 0 528.32 0C504.883 0 485.84 19.043 485.84 42.4805L485.84 147.461C485.84 170.898 504.883 189.941 528.32 189.941ZM767.578 290.039C784.18 306.152 811.035 306.641 827.637 290.039L902.344 215.332C918.457 199.219 918.457 171.875 902.344 155.273C886.23 139.16 858.887 139.16 842.773 155.273L767.578 230.469C751.465 246.582 751.465 273.926 767.578 290.039ZM866.699 529.785C866.699 552.734 886.23 571.777 909.18 571.777L1014.16 571.777C1037.11 571.777 1056.15 552.734 1056.15 529.785C1056.15 506.836 1037.11 487.305 1014.16 487.305L909.18 487.305C886.23 487.305 866.699 506.836 866.699 529.785ZM767.578 769.531C751.465 786.133 751.465 812.988 767.578 829.102L842.773 904.785C858.887 920.898 886.23 919.922 902.344 904.297C918.457 887.695 918.457 860.84 902.344 844.727L827.148 769.531C811.035 753.418 784.18 753.906 767.578 769.531ZM528.32 869.629C504.883 869.629 485.84 888.672 485.84 911.621L485.84 1017.09C485.84 1040.04 504.883 1059.08 528.32 1059.08C551.27 1059.08 570.312 1040.04 570.312 1017.09L570.312 911.621C570.312 888.672 551.27 869.629 528.32 869.629ZM288.574 769.531C271.973 753.906 244.629 753.418 228.516 769.531L153.809 844.238C137.695 860.352 137.695 887.207 153.32 903.809C169.434 919.434 197.266 920.41 213.379 904.297L288.086 829.102C304.199 812.988 304.199 786.133 288.574 769.531ZM189.453 529.785C189.453 506.836 169.922 487.305 146.973 487.305L41.9922 487.305C19.043 487.305 0 506.836 0 529.785C0 552.734 19.043 571.777 41.9922 571.777L146.973 571.777C169.922 571.777 189.453 552.734 189.453 529.785ZM288.086 290.039C304.199 274.414 304.199 246.094 288.574 230.469L213.867 155.273C198.242 139.648 170.41 139.16 154.297 155.273C138.184 171.875 138.184 199.219 153.809 214.844L228.516 290.039C244.629 306.152 271.484 306.152 288.086 290.039Z"/>
+            <path d="M527.832 778.32C665.039 778.32 776.367 666.992 776.367 529.785C776.367 392.578 665.039 280.762 527.832 280.762C390.625 280.762 279.297 392.578 279.297 529.785C279.297 666.992 390.625 778.32 527.832 778.32Z"/>
+        </svg>
     </div>
 
     <script>
@@ -107,6 +150,15 @@
             "#1abc9c", "#34495e", "#16a085", "#2980b9", "#8e44ad", 
             "#27ae60", "#e67e22", "#c0392b", "#d35400", "#7f8c8d", "#2c3e50"
         ];
+
+        // Predefined color list for dark mode
+        const darkColors = [
+            "#2980b9", "#c0392b", "#27ae60", "#e67e22", "#8e44ad", 
+            "#16a085", "#2c3e50", "#1abc9c", "#3498db", "#9b59b6", 
+            "#2ecc71", "#f39c12", "#e74c3c", "#d35400", "#7f8c8d", "#34495e"
+        ];
+
+        let isDarkMode = false;
 
         /**
          * Lightens a hex color by a percentage.
@@ -139,6 +191,7 @@
          */
         function initializeCounters(counterNames = []) {
             const container = document.getElementById("counterContainer");
+            const themeToggle = document.getElementById("theme-toggle");
 
             // If no names are provided, create empty fields
             if (counterNames.length === 0) {
@@ -148,7 +201,11 @@
             counterNames.forEach((name, index) => {
                 const row = document.createElement("div");
                 row.className = "row";
-                const baseColor = colors[index % colors.length];
+
+                /* const baseColor = colors[index % colors.length]; */
+                /* use darkColors for dark mode and colors for light mode */
+                const baseColor = isDarkMode ? darkColors[index % darkColors.length] : colors[index % colors.length];
+
                 row.style.backgroundColor = baseColor;
 
                 // Editable name field with lightened background
@@ -170,7 +227,9 @@
                 // Minus button
                 const minusButton = document.createElement("button");
                 minusButton.className = "button";
-                minusButton.textContent = "-";
+                /* minusButton.textContent = "-"; */
+                /* use a SVG icon instead of text */
+                minusButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M5 13H19V11H5V13Z"/></svg>`;
                 minusButton.onclick = () => {
                     counterValue.value = Math.max(0, parseInt(counterValue.value) - 1);
                 };
@@ -186,7 +245,9 @@
                 // Plus button
                 const plusButton = document.createElement("button");
                 plusButton.className = "button";
-                plusButton.textContent = "+";
+                /* plusButton.textContent = "+"; */
+                /* use a SVG icon instead of text */
+                plusButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>`;
                 plusButton.onclick = () => {
                     counterValue.value = parseInt(counterValue.value) + 1;
                 };
@@ -205,6 +266,32 @@
         // Parse names from URL and initialize counters
         const counterNames = getCounterNamesFromUrl();
         initializeCounters(counterNames);
+
+        function toggleDarkMode() {
+            const body = document.body;
+            const moonIcon = document.getElementById('moon-icon');
+            const sunIcon = document.getElementById('sun-icon');
+
+            body.classList.toggle('dark-mode');
+            moonIcon.style.opacity = body.classList.contains('dark-mode') ? '0' : '1';
+            sunIcon.style.opacity = body.classList.contains('dark-mode') ? '1' : '0';
+
+            /* when switching to dark mode, use darkColors and when switching to light mode, use colors; make sure to only update the colors and don't reinitialize the counters */
+            isDarkMode = !isDarkMode;
+            const baseColors = isDarkMode ? darkColors : colors;
+            const rows = document.querySelectorAll('.row');
+            rows.forEach((row, index) => {
+                const baseColor = baseColors[index % baseColors.length];
+                row.style.backgroundColor = baseColor;
+                const nameInput = row.querySelector('.counter-name input');
+                nameInput.style.backgroundColor = lightenColor(baseColor, 20);
+            });
+        }
+
+        /* Initialize dark mode based on the system preference */
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            toggleDarkMode();
+        }
     </script>
 </body>
 </html>
