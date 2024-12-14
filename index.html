@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+
+<!-- Changelog:
+ Version 1.4:
+
+
+-->
+
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -358,7 +366,12 @@
 
         // Request Wake Lock when the page loads
         requestWakeLock();
-        
+
+        // Also bind requestWakeLock to the click event of the plus buttons
+        document.querySelectorAll('.button-plus').forEach(button => {
+            button.addEventListener('click', requestWakeLock);
+        });
+
     </script>
 </body>
 </html>
