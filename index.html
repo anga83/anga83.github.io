@@ -337,6 +337,28 @@
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             toggleDarkMode();
         }
+
+        /* Prevent the screen from turning off */
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Wake Lock is active');
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        // Request Wake Lock when the page loads
+        requestWakeLock();
+        
     </script>
 </body>
 </html>
