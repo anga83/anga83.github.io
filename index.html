@@ -23,7 +23,8 @@
         @media (max-width: 768px) and (orientation: portrait) {
             body {
                 align-items: flex-start; /* Align content to the top */
-                min-height: 90vh; /* Reduce height */
+                min-height: 95vh; /* Reduce height */
+                overflow: hidden; /* Disable scrolling */
             }
         }
 
@@ -249,6 +250,8 @@
                 counterName.className = "counter-name";
                 const nameInput = document.createElement("input");
                 nameInput.type = "text";
+                /* disable spellcheck */
+                nameInput.spellcheck = false;
                 nameInput.value = name; // Prefill with provided name or leave empty
                 nameInput.style.backgroundColor = lightenColor(baseColor, 20); // 20% lighter
                 counterName.appendChild(nameInput);
