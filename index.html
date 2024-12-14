@@ -146,16 +146,12 @@
     <script>
         // Predefined color list
         const colors = [
-            "#3498db", "#e74c3c", "#2ecc71", "#f39c12", "#9b59b6", 
-            "#1abc9c", "#34495e", "#16a085", "#2980b9", "#8e44ad", 
-            "#27ae60", "#e67e22", "#c0392b", "#d35400", "#7f8c8d", "#2c3e50"
+            "#3498db", "#e74c3c", "#2ecc71", "#f39c12", "#2980b9", "#27ae60", "#e67e22", "#c0392b", "#d35400", "#7f8c8d", "#2c3e50"
         ];
 
         // Predefined color list for dark mode
         const darkColors = [
-            "#2980b9", "#c0392b", "#27ae60", "#e67e22", "#8e44ad", 
-            "#16a085", "#2c3e50", "#1abc9c", "#3498db", "#9b59b6", 
-            "#2ecc71", "#f39c12", "#e74c3c", "#d35400", "#7f8c8d", "#34495e"
+            "#2980b9", "#c0392b", "#27ae60", "#e67e22", "#3498db", "#2ecc71", "#f39c12", "#e74c3c", "#d35400", "#7f8c8d", "#34495e"
         ];
 
         let isDarkMode = false;
@@ -171,6 +167,20 @@
             const r = Math.min(255, Math.floor((num >> 16) + (255 - (num >> 16)) * (percent / 100)));
             const g = Math.min(255, Math.floor(((num >> 8) & 0x00ff) + (255 - ((num >> 8) & 0x00ff)) * (percent / 100)));
             const b = Math.min(255, Math.floor((num & 0x0000ff) + (255 - (num & 0x0000ff)) * (percent / 100)));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        /**
+         * Darkens a hex color by a percentage.
+         * @param {string} color - The hex color code.
+         * @param {number} percent - The percentage to darken (0-100).
+         * @returns {string} - The darkened hex color code.
+         */
+        function darkenColor(color, percent) {
+            const num = parseInt(color.slice(1), 16);
+            const r = Math.max(0, Math.floor((num >> 16) - (num >> 16) * (percent / 100)));
+            const g = Math.max(0, Math.floor(((num >> 8) & 0x00ff) - ((num >> 8) & 0x00ff) * (percent / 100)));
+            const b = Math.max(0, Math.floor((num & 0x0000ff) - (num & 0x0000ff) * (percent / 100)));
             return `rgb(${r}, ${g}, ${b})`;
         }
 
@@ -230,6 +240,8 @@
                 /* minusButton.textContent = "-"; */
                 /* use a SVG icon instead of text */
                 minusButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M5 13H19V11H5V13Z"/></svg>`;
+                /* set the button color using the baseColor and darken it by 40% */
+                minusButton.style.backgroundColor = darkenColor(baseColor, 40);
                 minusButton.onclick = () => {
                     counterValue.value = Math.max(0, parseInt(counterValue.value) - 1);
                 };
@@ -248,6 +260,8 @@
                 /* plusButton.textContent = "+"; */
                 /* use a SVG icon instead of text */
                 plusButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>`;
+                /* set the button color using the baseColor and darken it by 40% */
+                plusButton.style.backgroundColor = darkenColor(baseColor, 40);
                 plusButton.onclick = () => {
                     counterValue.value = parseInt(counterValue.value) + 1;
                 };
