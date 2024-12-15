@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 
 <!-- Changelog:
+ Version 1.7 (2024-12-15) - changed the dice icon to a shuffle icon, reused the dice icon to randomly highlight a counter for 5 seconds, disable zooming on mobile devices, fixed color issues for the plus and minus buttons when switching between dark and light mode
  Version 1.6 (2024-12-14) - added shuffle button to shuffle the counters
  Version 1.5 (2024-12-14) - added Wake Lock API to prevent the screen from turning off on mobile devices (requires HTTPS and at least one click on any plus button to activate)
  Version 1.4 (2024-12-14) - disabled spellcheck for the name input fields, small adjustments for mobile portrait screens
@@ -36,6 +37,13 @@
                 align-items: flex-start; /* Align content to the top */
                 min-height: 95vh; /* Reduce height */
                 overflow: hidden; /* Disable scrolling */
+            }
+        }
+
+        /* Disable zooming on mobile devices */
+        @media (pointer: coarse) {
+            body {
+                touch-action: manipulation;
             }
         }
 
@@ -146,10 +154,9 @@
             transition: opacity 0.2s;
         }
 
-        /* add the shuffle button to the left of the dark mode toggle */
         .shuffle-button {
             position: fixed;
-            top: 11px;
+            top: 18px;
             right: 76px;
             cursor: pointer;
             opacity: 0.7;
@@ -157,11 +164,25 @@
             color: #fff;
             background-color: transparent;
             border: none;
-            width: 50px;
-            height: 50px;
+        }
+        
+        .shuffle-button:hover {
+            opacity: 1;
         }
 
-        .shuffle-button:hover {
+        .select-button {
+            position: fixed;
+            top: 18px;
+            right: 128px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            color: #000;
+            background-color: transparent;
+            border: none;
+        }
+
+        .select-button:hover {
             opacity: 1;
         }
 
@@ -182,6 +203,28 @@
             fill: currentColor;
         }
 
+        /* divergent from svg set the size of the shuffle button to 36px */
+        .select-button svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .shuffle-button svg {
+            width: 32px;
+            height: 32px;
+        }
+
+
+        /* Glow effect */
+        .row.glow {
+            box-shadow: 0 0 10px 7px rgba(255, 77, 0, 0.7);
+
+            /* use the baseColor for the glow effect 
+            box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.7); */
+
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
     </style>
 </head>
 <body>
@@ -189,22 +232,35 @@
         <!-- Rows will be generated dynamically here -->
     </div>
 
-    <button class="shuffle-button" id="shuffleButton">
-        <!-- SVG Dice Icon -->
-        <svg viewBox="0 0 32 32">
-            <path d="M27.111 8.247l-9.531-5.514c-0.895-0.518-2.346-0.518-3.241 0l-9.531 5.514c-0.61 0.353-0.804 0.856-0.582 1.304l11.291 6.447c0.27 0.031 0.548 0.033 0.819 0.007l11.385-6.515c0.176-0.432-0.026-0.906-0.609-1.243zM17.397 9.982c-0.779 0.462-2.041 0.462-2.82 0s-0.779-1.211 0-1.673 2.041-0.462 2.82 0c0.779 0.462 0.779 1.211 0 1.673zM27.424 10.14l-10.366 5.932c-0.365 0.36-0.669 0.831-0.861 1.322v11.721c0.281 0.394 0.803 0.467 1.401 0.122l9.168-5.294c0.895-0.517 1.621-1.774 1.621-2.808v-9.84c0-0.763-0.396-1.191-0.963-1.155zM20.092 17.199c0.002 0.861-0.626 1.923-1.401 2.372s-1.405 0.116-1.407-0.745c0-0.002 0-0.004 0-0.006-0.002-0.861 0.626-1.923 1.401-2.372s1.405-0.116 1.407 0.745c0 0.002 0 0.004 0 0.006zM27.081 20.821c0.002 0.861-0.626 1.923-1.401 2.372s-1.405 0.116-1.407-0.745c0-0.002 0-0.004 0-0.006-0.002-0.861 0.626-1.923 1.401-2.372s1.405-0.116 1.407 0.745c0 0.002 0 0.004 0 0.006zM15.645 17.134c-0.165-0.345-0.383-0.671-0.635-0.944l-10.597-6.051c-0.504 0.027-0.846 0.446-0.846 1.156v9.84c0 1.034 0.726 2.291 1.621 2.808l9.168 5.294c0.525 0.303 0.992 0.284 1.289 0.008v-12.111h-0zM7.682 14.791c-0.002 0.861-0.631 1.194-1.407 0.745s-1.403-1.511-1.401-2.372c0-0.002 0-0.004 0-0.006 0.002-0.861 0.631-1.194 1.407-0.745s1.403 1.511 1.401 2.372c0 0.002 0 0.004 0 0.006zM11.176 20.615c-0.002 0.861-0.631 1.194-1.407 0.745s-1.403-1.511-1.401-2.372c0-0.002 0-0.004 0-0.006 0.002-0.861 0.631-1.194 1.407-0.745s1.403 1.511 1.401 2.372c0 0.002 0 0.004 0 0.006zM14.671 26.483c-0.002 0.861-0.631 1.194-1.407 0.745s-1.403-1.511-1.401-2.372c0-0.002 0-0.004 0-0.006 0.002-0.861 0.631-1.194 1.407-0.745s1.403 1.511 1.401 2.372c0 0.002 0 0.004 0 0.006z"></path>
-            </svg>
-    </button>
+    <div class="toolbar">
 
-    <!-- Dark Mode Toggle -->
-    <div class="dark-mode-toggle" onclick="toggleDarkMode()">
-        <svg id="moon-icon" viewBox="0 0 958.984 977.051" style="opacity: 1;">
-            <path d="M755.371 662.598C491.211 662.598 322.266 497.07 322.266 232.422C322.266 171.875 335.449 98.1445 353.027 57.6172C357.422 46.3867 358.398 39.0625 358.398 34.668C358.398 21.9727 348.633 7.32422 329.102 7.32422C323.73 7.32422 312.012 8.30078 300.781 12.6953C121.094 84.4727 0 273.926 0 472.168C0 750.977 226.074 977.051 504.883 977.051C715.332 977.051 891.602 849.609 953.613 691.406C958.008 679.688 958.984 667.48 958.984 663.086C958.984 644.531 944.336 632.812 930.664 632.812C924.316 632.812 918.945 634.277 909.668 637.207C871.582 649.414 815.43 662.598 755.371 662.598Z"/>
-        </svg>
-        <svg id="sun-icon" viewBox="0 0 1056.15 1060.06" style="opacity: 0;">
-            <path d="M528.32 189.941C551.27 189.941 570.312 170.898 570.312 147.461L570.312 42.4805C570.312 19.043 551.27 0 528.32 0C504.883 0 485.84 19.043 485.84 42.4805L485.84 147.461C485.84 170.898 504.883 189.941 528.32 189.941ZM767.578 290.039C784.18 306.152 811.035 306.641 827.637 290.039L902.344 215.332C918.457 199.219 918.457 171.875 902.344 155.273C886.23 139.16 858.887 139.16 842.773 155.273L767.578 230.469C751.465 246.582 751.465 273.926 767.578 290.039ZM866.699 529.785C866.699 552.734 886.23 571.777 909.18 571.777L1014.16 571.777C1037.11 571.777 1056.15 552.734 1056.15 529.785C1056.15 506.836 1037.11 487.305 1014.16 487.305L909.18 487.305C886.23 487.305 866.699 506.836 866.699 529.785ZM767.578 769.531C751.465 786.133 751.465 812.988 767.578 829.102L842.773 904.785C858.887 920.898 886.23 919.922 902.344 904.297C918.457 887.695 918.457 860.84 902.344 844.727L827.148 769.531C811.035 753.418 784.18 753.906 767.578 769.531ZM528.32 869.629C504.883 869.629 485.84 888.672 485.84 911.621L485.84 1017.09C485.84 1040.04 504.883 1059.08 528.32 1059.08C551.27 1059.08 570.312 1040.04 570.312 1017.09L570.312 911.621C570.312 888.672 551.27 869.629 528.32 869.629ZM288.574 769.531C271.973 753.906 244.629 753.418 228.516 769.531L153.809 844.238C137.695 860.352 137.695 887.207 153.32 903.809C169.434 919.434 197.266 920.41 213.379 904.297L288.086 829.102C304.199 812.988 304.199 786.133 288.574 769.531ZM189.453 529.785C189.453 506.836 169.922 487.305 146.973 487.305L41.9922 487.305C19.043 487.305 0 506.836 0 529.785C0 552.734 19.043 571.777 41.9922 571.777L146.973 571.777C169.922 571.777 189.453 552.734 189.453 529.785ZM288.086 290.039C304.199 274.414 304.199 246.094 288.574 230.469L213.867 155.273C198.242 139.648 170.41 139.16 154.297 155.273C138.184 171.875 138.184 199.219 153.809 214.844L228.516 290.039C244.629 306.152 271.484 306.152 288.086 290.039Z"/>
-            <path d="M527.832 778.32C665.039 778.32 776.367 666.992 776.367 529.785C776.367 392.578 665.039 280.762 527.832 280.762C390.625 280.762 279.297 392.578 279.297 529.785C279.297 666.992 390.625 778.32 527.832 778.32Z"/>
-        </svg>
+        <button class="select-button" id="selectButton">
+            <svg viewBox="0 0 32 32">
+                <path d="M27.111 8.247l-9.531-5.514c-0.895-0.518-2.346-0.518-3.241 0l-9.531 5.514c-0.61 0.353-0.804 0.856-0.582 1.304l11.291 6.447c0.27 0.031 0.548 0.033 0.819 0.007l11.385-6.515c0.176-0.432-0.026-0.906-0.609-1.243zM17.397 9.982c-0.779 0.462-2.041 0.462-2.82 0s-0.779-1.211 0-1.673 2.041-0.462 2.82 0c0.779 0.462 0.779 1.211 0 1.673zM27.424 10.14l-10.366 5.932c-0.365 0.36-0.669 0.831-0.861 1.322v11.721c0.281 0.394 0.803 0.467 1.401 0.122l9.168-5.294c0.895-0.517 1.621-1.774 1.621-2.808v-9.84c0-0.763-0.396-1.191-0.963-1.155zM20.092 17.199c0.002 0.861-0.626 1.923-1.401 2.372s-1.405 0.116-1.407-0.745c0-0.002 0-0.004 0-0.006-0.002-0.861 0.626-1.923 1.401-2.372s1.405-0.116 1.407 0.745c0 0.002 0 0.004 0 0.006zM27.081 20.821c0.002 0.861-0.626 1.923-1.401 2.372s-1.405 0.116-1.407-0.745c0-0.002 0-0.004 0-0.006-0.002-0.861 0.626-1.923 1.401-2.372s1.405-0.116 1.407 0.745c0 0.002 0 0.004 0 0.006zM15.645 17.134c-0.165-0.345-0.383-0.671-0.635-0.944l-10.597-6.051c-0.504 0.027-0.846 0.446-0.846 1.156v9.84c0 1.034 0.726 2.291 1.621 2.808l9.168 5.294c0.525 0.303 0.992 0.284 1.289 0.008v-12.111h-0zM7.682 14.791c-0.002 0.861-0.631 1.194-1.407 0.745s-1.403-1.511-1.401-2.372c0-0.002 0-0.004 0-0.006 0.002-0.861 0.631-1.194 1.407-0.745s1.403 1.511 1.401 2.372c0 0.002 0 0.004 0 0.006zM11.176 20.615c-0.002 0.861-0.631 1.194-1.407 0.745s-1.403-1.511-1.401-2.372c0-0.002 0-0.004 0-0.006 0.002-0.861 0.631-1.194 1.407-0.745s1.403 1.511 1.401 2.372c0 0.002 0 0.004 0 0.006zM14.671 26.483c-0.002 0.861-0.631 1.194-1.407 0.745s-1.403-1.511-1.401-2.372c0-0.002 0-0.004 0-0.006 0.002-0.861 0.631-1.194 1.407-0.745s1.403 1.511 1.401 2.372c0 0.002 0 0.004 0 0.006z"></path>
+            </svg>
+        </button>
+
+        <button class="shuffle-button" id="shuffleButton">
+            <svg viewBox="0 0 1122.07 885.254">
+                <g>
+                 <rect height="885.254" opacity="0" width="1122.07" x="0" y="0"/>
+                 <path d="M0 693.359C0 717.773 18.0664 733.887 44.9219 733.887L156.25 733.887C237.305 733.887 283.691 710.938 342.773 642.578L638.672 297.363C680.664 248.535 715.82 230.469 769.531 230.469L869.141 230.469L869.141 340.82C869.141 360.352 880.371 371.582 900.391 371.582C909.668 371.582 918.457 368.164 925.781 362.305L1110.35 209.473C1125.98 196.777 1125.98 176.758 1110.35 163.086L925.781 9.76562C918.457 3.90625 909.668 0.976562 900.391 0.976562C880.371 0.976562 869.141 11.7188 869.141 31.25L869.141 148.926L767.09 148.926C685.547 148.926 638.672 171.875 580.078 240.234L284.668 585.449C242.188 634.766 208.496 652.832 158.691 652.832L44.9219 652.832C18.5547 652.832 0 668.945 0 693.359ZM0 189.941C0 213.867 18.5547 230.469 44.9219 230.469L158.691 230.469C208.984 230.469 242.676 248.535 284.668 297.852L580.078 643.066C638.672 710.938 685.547 733.887 767.09 733.887L869.141 733.887L869.141 854.98C869.141 874.512 880.371 885.254 900.391 885.254C909.668 885.254 918.457 882.324 925.781 876.465L1110.35 723.633C1125.98 710.449 1125.98 690.918 1110.35 677.246L925.781 523.926C918.457 518.066 909.668 514.648 900.391 514.648C880.371 514.648 869.141 525.879 869.141 545.41L869.141 652.832L769.531 652.832C715.82 652.832 680.664 634.766 638.672 585.449L342.773 240.234C283.691 172.363 237.305 149.414 156.25 149.414L44.9219 149.414C18.0664 149.414 0 165.527 0 189.941Z"/>
+                </g>
+            </svg>
+        </button>
+
+        <!-- Dark Mode Toggle -->
+        <div class="dark-mode-toggle" onclick="toggleDarkMode()">
+            <svg id="moon-icon" viewBox="0 0 958.984 977.051" style="opacity: 1;">
+                <path d="M755.371 662.598C491.211 662.598 322.266 497.07 322.266 232.422C322.266 171.875 335.449 98.1445 353.027 57.6172C357.422 46.3867 358.398 39.0625 358.398 34.668C358.398 21.9727 348.633 7.32422 329.102 7.32422C323.73 7.32422 312.012 8.30078 300.781 12.6953C121.094 84.4727 0 273.926 0 472.168C0 750.977 226.074 977.051 504.883 977.051C715.332 977.051 891.602 849.609 953.613 691.406C958.008 679.688 958.984 667.48 958.984 663.086C958.984 644.531 944.336 632.812 930.664 632.812C924.316 632.812 918.945 634.277 909.668 637.207C871.582 649.414 815.43 662.598 755.371 662.598Z"/>
+            </svg>
+
+            <svg id="sun-icon" viewBox="0 0 1056.15 1060.06" style="opacity: 0;">
+                <path d="M528.32 189.941C551.27 189.941 570.312 170.898 570.312 147.461L570.312 42.4805C570.312 19.043 551.27 0 528.32 0C504.883 0 485.84 19.043 485.84 42.4805L485.84 147.461C485.84 170.898 504.883 189.941 528.32 189.941ZM767.578 290.039C784.18 306.152 811.035 306.641 827.637 290.039L902.344 215.332C918.457 199.219 918.457 171.875 902.344 155.273C886.23 139.16 858.887 139.16 842.773 155.273L767.578 230.469C751.465 246.582 751.465 273.926 767.578 290.039ZM866.699 529.785C866.699 552.734 886.23 571.777 909.18 571.777L1014.16 571.777C1037.11 571.777 1056.15 552.734 1056.15 529.785C1056.15 506.836 1037.11 487.305 1014.16 487.305L909.18 487.305C886.23 487.305 866.699 506.836 866.699 529.785ZM767.578 769.531C751.465 786.133 751.465 812.988 767.578 829.102L842.773 904.785C858.887 920.898 886.23 919.922 902.344 904.297C918.457 887.695 918.457 860.84 902.344 844.727L827.148 769.531C811.035 753.418 784.18 753.906 767.578 769.531ZM528.32 869.629C504.883 869.629 485.84 888.672 485.84 911.621L485.84 1017.09C485.84 1040.04 504.883 1059.08 528.32 1059.08C551.27 1059.08 570.312 1040.04 570.312 1017.09L570.312 911.621C570.312 888.672 551.27 869.629 528.32 869.629ZM288.574 769.531C271.973 753.906 244.629 753.418 228.516 769.531L153.809 844.238C137.695 860.352 137.695 887.207 153.32 903.809C169.434 919.434 197.266 920.41 213.379 904.297L288.086 829.102C304.199 812.988 304.199 786.133 288.574 769.531ZM189.453 529.785C189.453 506.836 169.922 487.305 146.973 487.305L41.9922 487.305C19.043 487.305 0 506.836 0 529.785C0 552.734 19.043 571.777 41.9922 571.777L146.973 571.777C169.922 571.777 189.453 552.734 189.453 529.785ZM288.086 290.039C304.199 274.414 304.199 246.094 288.574 230.469L213.867 155.273C198.242 139.648 170.41 139.16 154.297 155.273C138.184 171.875 138.184 199.219 153.809 214.844L228.516 290.039C244.629 306.152 271.484 306.152 288.086 290.039Z"/>
+                <path d="M527.832 778.32C665.039 778.32 776.367 666.992 776.367 529.785C776.367 392.578 665.039 280.762 527.832 280.762C390.625 280.762 279.297 392.578 279.297 529.785C279.297 666.992 390.625 778.32 527.832 778.32Z"/>
+            </svg>
+        </div>
+
     </div>
 
     <script>
@@ -219,6 +275,7 @@
         ];
 
         let isDarkMode = false;
+        let glowTimeout = null; // Timeout reference for glow effect
 
         /**
          * Lightens a hex color by a percentage.
@@ -368,6 +425,29 @@
                 const nameInput = row.querySelector('.counter-name input');
                 nameInput.style.backgroundColor = lightenColor(baseColor, 20);
             });
+
+            
+            /* update the color of the plus and minus buttons when switching between dark and light mode; use the baseColor of the exact row */
+            const plusButtons = document.querySelectorAll('.button-plus');
+            const minusButtons = document.querySelectorAll('.button-minus');
+            plusButtons.forEach((button, index) => {
+                const baseColor = baseColors[index % baseColors.length];
+                button.style.backgroundColor = darkenColor(baseColor, 30);
+            });
+            minusButtons.forEach((button, index) => {
+                const baseColor = baseColors[index % baseColors.length];
+                button.style.backgroundColor = darkenColor(baseColor, 30);
+            });
+
+            /* set the color of select-button to black when in light mode and to white when in dark mode */
+            const selectButton = document.querySelector('.select-button');
+            selectButton.style.color = isDarkMode ? '#fff' : '#000';
+
+            /* set the color of shuffle-button to white when in dark mode and to black when in light mode */
+            const shuffleButton = document.querySelector('.shuffle-button');
+            shuffleButton.style.color = isDarkMode ? '#fff' : '#000';
+
+
         }
 
         /* Initialize dark mode based on the system preference */
@@ -436,6 +516,41 @@
             urlParams.set('names', shuffledNames.join(','));
             history.replaceState(null, '', `${location.pathname}?${urlParams}`);
 
+        }
+
+
+        document.getElementById('selectButton').addEventListener('click', highlightRandomCounter);
+
+        // Highlight a random counter with a glow effect for 5 seconds when the wheel button is clicked. After 5 seconds, the glow effect will be removed. If the button is clicked again within the 5 seconds, the glow effect will be removed immediately and a new counter will be highlighted. In any case, only one counter can be highlighted at a time, and only named counters can be highlighted.
+        function highlightRandomCounter() {
+            // Clear the previous glow effect
+            if (glowTimeout) {
+                clearTimeout(glowTimeout);
+                glowTimeout = null;
+                const previousGlowCounter = document.querySelector('.glow');
+                if (previousGlowCounter) {
+                    previousGlowCounter.classList.remove('glow');
+                }
+            }
+
+            // Get all named counters
+            const namedCounters = Array.from(document.querySelectorAll('.counter-name input')).filter(input => input.value.trim() !== '');
+
+            if (namedCounters.length > 0) {
+                // Pick a random named counter
+                const randomIndex = Math.floor(Math.random() * namedCounters.length);
+                const randomCounter = namedCounters[randomIndex];
+                const randomCounterRow = randomCounter.closest('.row');
+
+                // Highlight the random counter with a glow effect
+                randomCounterRow.classList.add('glow');
+
+                // Remove the glow effect after 5 seconds
+                glowTimeout = setTimeout(() => {
+                    randomCounterRow.classList.remove('glow');
+                    glowTimeout = null;
+                }, 5000);
+            }
         }
 
     </script>
