@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 
 <!-- Changelog:
+ Version 1.8 (2024-12-15) - trying to make the glow effect more visible in light mode, added function to limit tabbing to be within the counter names
  Version 1.7 (2024-12-15) - changed the dice icon to a shuffle icon, reused the dice icon to randomly highlight a counter for 5 seconds, disable zooming on mobile devices, fixed color issues for the plus and minus buttons when switching between dark and light mode
  Version 1.6 (2024-12-14) - added shuffle button to shuffle the counters
  Version 1.5 (2024-12-14) - added Wake Lock API to prevent the screen from turning off on mobile devices (requires HTTPS and at least one click on any plus button to activate)
@@ -40,7 +41,7 @@
             }
         }
 
-        /* Disable zooming on mobile devices */
+        /* Disable zooming on mobile devices when double-tapping */
         @media (pointer: coarse) {
             body {
                 touch-action: manipulation;
@@ -101,6 +102,11 @@
 
         .counter-value[readonly] {
             pointer-events: none;
+        }
+
+        /* also make counter-value not highlightable */
+        .counter-value::selection {
+            background-color: transparent;
         }
 
         .button {
@@ -173,7 +179,7 @@
         .select-button {
             position: fixed;
             top: 18px;
-            right: 128px;
+            right: 132px;
             cursor: pointer;
             opacity: 0.7;
             transition: opacity 0.2s;
@@ -215,9 +221,9 @@
         }
 
 
-        /* Glow effect */
+        /* Glow effect for the selected counter */
         .row.glow {
-            box-shadow: 0 0 10px 7px rgba(255, 77, 0, 0.7);
+            box-shadow: 0 0 10px 7px rgba(255, 0, 0, 0.8);
 
             /* use the baseColor for the glow effect 
             box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.7); */
@@ -225,13 +231,14 @@
             transition: box-shadow 0.3s ease-in-out;
         }
 
+        /* Use another glow effect for dark mode */
+        .dark-mode .row.glow {
+            box-shadow: 0 0 10px 7px rgba(255, 77, 0, 0.75);
+        }
+
     </style>
 </head>
 <body>
-    <div class="container" id="counterContainer">
-        <!-- Rows will be generated dynamically here -->
-    </div>
-
     <div class="toolbar">
 
         <button class="select-button" id="selectButton">
@@ -261,6 +268,10 @@
             </svg>
         </div>
 
+    </div>
+
+    <div class="container" id="counterContainer">
+        <!-- Rows will be generated dynamically here -->
     </div>
 
     <script>
@@ -439,6 +450,18 @@
                 button.style.backgroundColor = darkenColor(baseColor, 30);
             });
 
+            /* also make sure the counter-name and counter-value fields are updated when switching between dark and light mode */
+            const counterNames = document.querySelectorAll('.counter-name input');
+            const counterValues = document.querySelectorAll('.counter-value');
+            counterNames.forEach((nameInput, index) => {
+                const baseColor = baseColors[index % baseColors.length];
+                nameInput.style.backgroundColor = lightenColor(baseColor, 20);
+            });
+            counterValues.forEach((valueInput, index) => {
+                const baseColor = baseColors[index % baseColors.length];
+                valueInput.style.backgroundColor = lightenColor(baseColor, 60);
+            });
+
             /* set the color of select-button to black when in light mode and to white when in dark mode */
             const selectButton = document.querySelector('.select-button');
             selectButton.style.color = isDarkMode ? '#fff' : '#000';
@@ -446,7 +469,6 @@
             /* set the color of shuffle-button to white when in dark mode and to black when in light mode */
             const shuffleButton = document.querySelector('.shuffle-button');
             shuffleButton.style.color = isDarkMode ? '#fff' : '#000';
-
 
         }
 
@@ -552,6 +574,29 @@
                 }, 5000);
             }
         }
+
+
+        // Add a function that automatically selects the next counter-name field when the user presses Tab, thereby overriding any tabindex settings
+        document.querySelectorAll('.counter-name input').forEach((input, index, inputs) => {
+            input.addEventListener('keydown', event => {
+                if (event.key === 'Tab') {
+                    event.preventDefault();
+                    const nextIndex = (index + 1) % inputs.length;
+                    inputs[nextIndex].focus();
+                }
+            });
+        });
+
+        // Similarly, add a function that automatically selects the previous counter-name field when the user presses Shift + Tab
+        document.querySelectorAll('.counter-name input').forEach((input, index, inputs) => {
+            input.addEventListener('keydown', event => {
+                if (event.key === 'Tab' && event.shiftKey) {
+                    event.preventDefault();
+                    const previousIndex = (index - 1 + inputs.length) % inputs.length;
+                    inputs[previousIndex].focus();
+                }
+            });
+        });
 
     </script>
 </body>
