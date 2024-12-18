@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 
 <!-- Changelog:
+ Version 1.9 (2024-12-18) - small adjustments for mobile portrait screens
  Version 1.8 (2024-12-15) - trying to make the glow effect more visible in light mode, added function to limit tabbing to be within the counter names
  Version 1.7 (2024-12-15) - changed the dice icon to a shuffle icon, reused the dice icon to randomly highlight a counter for 5 seconds, disable zooming on mobile devices, fixed color issues for the plus and minus buttons when switching between dark and light mode
  Version 1.6 (2024-12-14) - added shuffle button to shuffle the counters
@@ -35,8 +36,8 @@
         /* Adjust for mobile portrait screens */
         @media (max-width: 768px) and (orientation: portrait) {
             body {
-                align-items: flex-start; /* Align content to the top */
-                min-height: 95vh; /* Reduce height */
+                /* align-items: flex-start; /* Align content to the top */
+                /* min-height: 95vh; /* Reduce height */
                 overflow: hidden; /* Disable scrolling */
             }
         }
@@ -267,8 +268,10 @@
                 <path d="M527.832 778.32C665.039 778.32 776.367 666.992 776.367 529.785C776.367 392.578 665.039 280.762 527.832 280.762C390.625 280.762 279.297 392.578 279.297 529.785C279.297 666.992 390.625 778.32 527.832 778.32Z"/>
             </svg>
         </div>
-
     </div>
+
+    <!-- avoid those two divs from colliding -->
+    <div style="height: 5px;"></div>
 
     <div class="container" id="counterContainer">
         <!-- Rows will be generated dynamically here -->
