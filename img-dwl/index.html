@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bild-Sequenz Downloader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            display: none;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #2ecc71;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        #log-container {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .log-success {
+            color: #27ae60;
+        }
+        .log-error {
+            color: #e74c3c;
+        }
+        .download-list {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .download-item {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+        .download-item img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .download-item .retry-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .failed {
+            border-color: #e74c3c;
+        }
+        .options-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .options-group > div {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bild-Sequenz Downloader</h1>
+    <div class="container">
+        <div class="form-group">
+            <label for="base-url">Basis-URL des ersten Bildes:</label>
+            <input type="text" id="base-url" placeholder="https://example.com/path/to/images/1.jpg" 
+                value="https://example.com/path/to/the/images/1.jpg">
+        </div>
+        
+        <div class="options-group">
+            <div class="form-group">
+                <label for="start-number">Startnummer:</label>
+                <input type="number" id="start-number" value="1" min="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="increment">Inkrement:</label>
+                <input type="number" id="increment" value="1" min="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="end-number">Endnummer:</label>
+                <input type="number" id="end-number" value="10" min="1">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="download-mode">Download-Modus:</label>
+            <select id="download-mode">
+                <option value="single">Einzelne Bilder</option>
+                <option value="zip">Als ZIP-Pakete bündeln</option>
+            </select>
+        </div>
+        
+        <div class="form-group" id="zip-options" style="display: none;">
+            <label for="zip-size">Bilder pro ZIP-Paket:</label>
+            <input type="number" id="zip-size" value="10" min="1">
+        </div>
+        
+        <div>
+            <button id="start-btn">Download starten</button>
+            <button id="stop-btn" disabled>Download stoppen</button>
+        </div>
+        
+        <div class="progress-container" id="progress-container">
+            <div id="progress-text">Fortschritt: 0%</div>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progress-bar-fill"></div>
+            </div>
+        </div>
+        
+        <div id="log-container"></div>
+        
+        <div class="download-list" id="download-list"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM-Referenzen
+            const baseUrlInput = document.getElementById('base-url');
+            const startNumberInput = document.getElementById('start-number');
+            const incrementInput = document.getElementById('increment');
+            const endNumberInput = document.getElementById('end-number');
+            const downloadModeSelect = document.getElementById('download-mode');
+            const zipOptionsDiv = document.getElementById('zip-options');
+            const zipSizeInput = document.getElementById('zip-size');
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const progressContainer = document.getElementById('progress-container');
+            const progressBarFill = document.getElementById('progress-bar-fill');
+            const progressText = document.getElementById('progress-text');
+            const logContainer = document.getElementById('log-container');
+            const downloadList = document.getElementById('download-list');
+            
+            // Status-Variablen
+            let isDownloading = false;
+            let shouldStop = false;
+            let currentIndex = 0;
+            let downloadQueue = [];
+            let failedDownloads = [];
+            let successfulDownloads = 0;
+            let totalDownloads = 0;
+            
+            // Event-Listener für Download-Modus
+            downloadModeSelect.addEventListener('change', function() {
+                zipOptionsDiv.style.display = this.value === 'zip' ? 'block' : 'none';
+            });
+            
+            // Event-Listener für Start-Button
+            startBtn.addEventListener('click', startDownload);
+            
+            // Event-Listener für Stop-Button
+            stopBtn.addEventListener('click', function() {
+                shouldStop = true;
+                stopBtn.disabled = true;
+                logInfo('Download wird angehalten...');
+            });
+            
+            // Hilfsfunktion: URL parsen und Nummern ersetzen
+            function parseUrl(url, number) {
+                // Finde den letzten Pfadteil (Dateiname)
+                const urlObj = new URL(url);
+                const pathParts = urlObj.pathname.split('/');
+                const filename = pathParts[pathParts.length - 1];
+                
+                // Ersetze Nummern im Dateinamen
+                let newFilename;
+                
+                // Prüfe, ob der Dateiname eine Zahl vor der Erweiterung enthält
+                const match = filename.match(/(\D*)(\d+)(\.\w+)$/);
+                if (match) {
+                    // Wenn ja, ersetze die Zahl
+                    const prefix = match[1];
+                    const extension = match[3];
+                    newFilename = `${prefix}${number}${extension}`;
+                } else {
+                    // Falls kein passendes Muster gefunden wurde, benutze die Originaldatei
+                    logError(`Konnte keine Nummer im Dateinamen identifizieren: ${filename}`);
+                    return url;
+                }
+                
+                // Ersetze den Dateinamen in der URL
+                pathParts[pathParts.length - 1] = newFilename;
+                urlObj.pathname = pathParts.join('/');
+                return urlObj.toString();
+            }
+            
+            // Hilfsfunktion: Log-Eintrag hinzufügen
+            function logInfo(message) {
+                const logEntry = document.createElement('div');
+                logEntry.textContent = `[INFO] ${message}`;
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            function logSuccess(message) {
+                const logEntry = document.createElement('div');
+                logEntry.textContent = `[OK] ${message}`;
+                logEntry.className = 'log-success';
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            function logError(message) {
+                const logEntry = document.createElement('div');
+                logEntry.textContent = `[FEHLER] ${message}`;
+                logEntry.className = 'log-error';
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            // Download-Funktion
+            async function startDownload() {
+                // Benutzereingaben validieren
+                const baseUrl = baseUrlInput.value.trim();
+                const startNumber = parseInt(startNumberInput.value, 10);
+                const increment = parseInt(incrementInput.value, 10);
+                const endNumber = parseInt(endNumberInput.value, 10);
+                const downloadMode = downloadModeSelect.value;
+                const zipSize = parseInt(zipSizeInput.value, 10);
+                
+                if (!baseUrl || isNaN(startNumber) || isNaN(increment) || isNaN(endNumber)) {
+                    alert('Bitte alle Felder korrekt ausfüllen.');
+                    return;
+                }
+                
+                if (startNumber > endNumber) {
+                    alert('Die Startnummer muss kleiner oder gleich der Endnummer sein.');
+                    return;
+                }
+                
+                if (increment <= 0) {
+                    alert('Das Inkrement muss größer als 0 sein.');
+                    return;
+                }
+                
+                // Download-Warteschlange erstellen
+                downloadQueue = [];
+                for (let i = startNumber; i <= endNumber; i += increment) {
+                    downloadQueue.push(i);
+                }
+                
+                // Interface aktualisieren
+                isDownloading = true;
+                shouldStop = false;
+                failedDownloads = [];
+                successfulDownloads = 0;
+                totalDownloads = downloadQueue.length;
+                
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                progressContainer.style.display = 'block';
+                updateProgress(0);
+                logContainer.innerHTML = '';
+                downloadList.innerHTML = '';
+                
+                logInfo(`Download startet für Bildsequenz von ${startNumber} bis ${endNumber} mit Inkrement ${increment}`);
+                
+                // Download starten je nach Modus
+                if (downloadMode === 'single') {
+                    await downloadSingleImages(baseUrl);
+                } else {
+                    await downloadAsZip(baseUrl, zipSize);
+                }
+                
+                // Interface aktualisieren
+                isDownloading = false;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                
+                if (shouldStop) {
+                    logInfo('Download wurde gestoppt.');
+                } else if (failedDownloads.length === 0) {
+                    logSuccess(`Alle ${successfulDownloads} Bilder wurden erfolgreich heruntergeladen!`);
+                } else {
+                    logInfo(`Download abgeschlossen. ${successfulDownloads} von ${totalDownloads} Bildern erfolgreich heruntergeladen.`);
+                    logError(`${failedDownloads.length} Bilder konnten nicht heruntergeladen werden.`);
+                }
+            }
+            
+            // Fortschrittsanzeige aktualisieren
+            function updateProgress(percent) {
+                progressBarFill.style.width = `${percent}%`;
+                progressText.textContent = `Fortschritt: ${percent.toFixed(1)}%`;
+            }
+            
+            // Einzelne Bilder herunterladen
+            async function downloadSingleImages(baseUrl) {
+                for (let i = 0; i < downloadQueue.length; i++) {
+                    if (shouldStop) break;
+                    
+                    const number = downloadQueue[i];
+                    const imageUrl = parseUrl(baseUrl, number);
+                    
+                    try {
+                        logInfo(`Lade Bild ${number} herunter: ${imageUrl}`);
+                        
+                        // Bild laden
+                        const response = await fetch(imageUrl, { mode: 'cors' });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP-Fehler: ${response.status}`);
+                        }
+                        
+                        const blob = await response.blob();
+                        
+                        // Dateiname extrahieren
+                        const urlParts = imageUrl.split('/');
+                        const filename = urlParts[urlParts.length - 1];
+                        
+                        // Download auslösen
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = URL.createObjectURL(blob);
+                        downloadLink.download = filename;
+                        downloadLink.click();
+                        
+                        // Erfolg loggen
+                        addImageToGallery(imageUrl, number, blob);
+                        logSuccess(`Bild ${number} heruntergeladen: ${filename}`);
+                        successfulDownloads++;
+                    } catch (error) {
+                        logError(`Konnte Bild ${number} nicht herunterladen: ${error.message}`);
+                        failedDownloads.push({ number, url: imageUrl });
+                        addFailedImageToGallery(imageUrl, number);
+                    }
+                    
+                    // Fortschritt aktualisieren
+                    updateProgress((i + 1) / downloadQueue.length * 100);
+                }
+            }
+            
+            // Als ZIP-Pakete herunterladen
+            async function downloadAsZip(baseUrl, zipSize) {
+                // Bilder in Pakete aufteilen
+                const batches = [];
+                for (let i = 0; i < downloadQueue.length; i += zipSize) {
+                    batches.push(downloadQueue.slice(i, i + zipSize));
+                }
+                
+                // Jedes Paket herunterladen
+                for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+                    if (shouldStop) break;
+                    
+                    const batch = batches[batchIndex];
+                    const zip = new JSZip();
+                    const batchImages = [];
+                    let successCount = 0;
+                    
+                    logInfo(`Verarbeite Batch ${batchIndex + 1}/${batches.length} (${batch.length} Bilder)`);
+                    
+                    // Jedes Bild im Paket herunterladen
+                    for (let j = 0; j < batch.length; j++) {
+                        if (shouldStop) break;
+                        
+                        const number = batch[j];
+                        const imageUrl = parseUrl(baseUrl, number);
+                        
+                        try {
+                            logInfo(`Lade Bild ${number} für ZIP-Paket ${batchIndex + 1} herunter`);
+                            
+                            // Bild laden
+                            const response = await fetch(imageUrl, { mode: 'cors' });
+                            
+                            if (!response.ok) {
+                                throw new Error(`HTTP-Fehler: ${response.status}`);
+                            }
+                            
+                            const blob = await response.blob();
+                            
+                            // Dateiname extrahieren
+                            const urlParts = imageUrl.split('/');
+                            const filename = urlParts[urlParts.length - 1];
+                            
+                            // Zum ZIP hinzufügen
+                            zip.file(filename, blob);
+                            
+                            // Erfolg loggen
+                            logSuccess(`Bild ${number} zum ZIP hinzugefügt`);
+                            successfulDownloads++;
+                            successCount++;
+                            batchImages.push({ url: imageUrl, number, blob });
+                        } catch (error) {
+                            logError(`Konnte Bild ${number} nicht herunterladen: ${error.message}`);
+                            failedDownloads.push({ number, url: imageUrl });
+                        }
+                        
+                        // Fortschritt aktualisieren (berücksichtigt alle Batches)
+                        const overallProgress = (batchIndex * zipSize + j + 1) / downloadQueue.length * 100;
+                        updateProgress(Math.min(overallProgress, 100));
+                    }
+                    
+                    if (shouldStop) break;
+                    
+                    if (successCount > 0) {
+                        // ZIP erstellen und herunterladen
+                        logInfo(`Erstelle ZIP-Datei für Batch ${batchIndex + 1}...`);
+                        const zipBlob = await zip.generateAsync({ type: 'blob' });
+                        
+                        const startNum = batch[0];
+                        const endNum = batch[batch.length - 1];
+                        const zipFilename = `images_${startNum}-${endNum}.zip`;
+                        
+                        saveAs(zipBlob, zipFilename);
+                        
+                        logSuccess(`ZIP-Paket ${batchIndex + 1} heruntergeladen: ${zipFilename}`);
+                        
+                        // Bilder zur Galerie hinzufügen
+                        batchImages.forEach(img => {
+                            addImageToGallery(img.url, img.number, img.blob);
+                        });
+                    } else {
+                        logError(`Keine Bilder für ZIP-Paket ${batchIndex + 1} verfügbar.`);
+                    }
+                }
+            }
+            
+            // Bild zur Galerie hinzufügen
+            function addImageToGallery(url, number, blob) {
+                const item = document.createElement('div');
+                item.className = 'download-item';
+                
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(blob);
+                img.alt = `Bild ${number}`;
+                
+                const label = document.createElement('div');
+                label.textContent = `#${number}`;
+                
+                item.appendChild(img);
+                item.appendChild(label);
+                downloadList.appendChild(item);
+            }
+            
+            // Fehlerhaftes Bild zur Galerie hinzufügen
+            function addFailedImageToGallery(url, number) {
+                const item = document.createElement('div');
+                item.className = 'download-item failed';
+                
+                const label = document.createElement('div');
+                label.textContent = `#${number} (Fehler)`;
+                
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'retry-btn';
+                retryBtn.textContent = '↻';
+                retryBtn.title = 'Erneut versuchen';
+                retryBtn.addEventListener('click', function() {
+                    retryDownload(url, number);
+                });
+                
+                item.appendChild(document.createElement('img')); // Platzhalter-Bild
+                item.appendChild(label);
+                item.appendChild(retryBtn);
+                downloadList.appendChild(item);
+            }
+            
+            // Fehlerhaften Download wiederholen
+            async function retryDownload(url, number) {
+                logInfo(`Wiederhole Download für Bild ${number}...`);
+                
+                try {
+                    // Bild laden
+                    const response = await fetch(url, { mode: 'cors' });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP-Fehler: ${response.status}`);
+                    }
+                    
+                    const blob = await response.blob();
+                    
+                    // Dateiname extrahieren
+                    const urlParts = url.split('/');
+                    const filename = urlParts[urlParts.length - 1];
+                    
+                    // Download auslösen
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = URL.createObjectURL(blob);
+                    downloadLink.download = filename;
+                    downloadLink.click();
+                    
+                    // Aus fehlgeschlagenen Downloads entfernen
+                    failedDownloads = failedDownloads.filter(item => item.number !== number);
+                    successfulDownloads++;
+                    
+                    // Erfolg loggen und UI aktualisieren
+                    logSuccess(`Erneuter Download für Bild ${number} erfolgreich`);
+                    
+                    // Element in der Galerie ersetzen
+                    const items = downloadList.querySelectorAll('.download-item');
+                    for (let item of items) {
+                        if (item.textContent.includes(`#${number}`)) {
+                            item.className = 'download-item';
+                            const img = item.querySelector('img');
+                            img.src = URL.createObjectURL(blob);
+                            
+                            const label = item.querySelector('div');
+                            label.textContent = `#${number}`;
+                            
+                            const retryBtn = item.querySelector('.retry-btn');
+                            if (retryBtn) retryBtn.remove();
+                            
+                            break;
+                        }
+                    }
+                } catch (error) {
+                    logError(`Erneuter Download für Bild ${number} fehlgeschlagen: ${error.message}`);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
