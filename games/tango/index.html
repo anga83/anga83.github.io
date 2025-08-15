@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tango</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='42' fill='%23ffbf38' stroke='%23ff8600' stroke-width='10'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="controls-row">
+      <div class="brand"><h1>Tango</h1></div>
+  <label><span data-i18n="label.size">Größe:</span>
+        <select id="sizeSelect">
+          <option value="4">4 x 4</option>
+          <option value="6" selected>6 x 6</option>
+          <option value="8">8 x 8</option>
+          <option value="10">10 x 10</option>
+        </select>
+      </label>
+  <label><span data-i18n="label.difficulty">Schwierigkeit:</span>
+        <select id="difficultySelect">
+          <option value="easy">Einfach</option>
+          <option value="medium" selected>Mittel</option>
+          <option value="hard">Schwer</option>
+        </select>
+      </label>
+  <button id="newBtn" data-i18n="btn.new">Neu</button>
+  <button id="dailyBtn" data-i18n="btn.daily">Tägliches Puzzle</button>
+  <button id="resetBtn" data-i18n="btn.reset">Zurücksetzen</button>
+  <button id="checkBtn" data-i18n="btn.check">Prüfen</button>
+  <button id="cleanErrorsBtn" data-i18n="btn.clean">Fehler entfernen</button>
+  <button id="constraintStyleBtn" data-i18n="btn.constraints">x/=</button>
+  <button id="solveBtn" data-i18n="btn.solve">Lösen</button>
+  <button id="themeToggle" aria-label="Theme">🌓</button>
+  <button id="rulesBtn" aria-label="Rules">ⓘ</button>
+  <button id="infoBtn" aria-label="Info">🔗</button>
+    </div>
+    <div id="linkBubble" class="link-bubble hidden">
+      <div class="lb-row"><span data-i18n="info.link">Puzzle-Link:</span></div>
+      <div class="lb-row"><input id="shareLinkInput" readonly /></div>
+      <div class="lb-row actions"><button id="copyLinkBtn" data-i18n="btn.copy">Kopieren</button></div>
+    </div>
+  <div id="rulesBubble" class="rules-bubble hidden" aria-live="polite"></div>
+  </header>
+  <main>
+  <section class="board-wrapper">
+  <div id="board" class="board" aria-label="Tango Spielfeld"><div class="loading-placeholder" data-i18n="loading">Wird geladen...</div></div>
+      <div class="info-bar">
+  <span id="statusMsg" data-i18n="status.ready">Bereit.</span>
+      </div>
+  <div class="legend-bar" id="legendBar">
+        <span><span class="eq-line"></span> = gleich</span>
+        <span><span class="neq-line"></span> = unterschiedlich</span>
+      </div>
+    </section>
+  </main>
+  <script>window.__TANGO_BOOTED=true;document.documentElement.setAttribute('data-tango-loaded','1');</script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sudoku</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="controls-row">
+      <div class="brand"><h1>Sudoku</h1></div>
+      <label data-i18n-label="sizeLabel">Größe:
+        <select id="sizeSelect">
+          <option value="9" selected>9 x 9</option>
+          <option value="6">6 x 6</option>
+          <option value="4">4 x 4</option>
+          <option value="12">12 x 12</option>
+        </select>
+      </label>
+      <label data-i18n-label="subblocksLabel">Unterblöcke:
+        <select id="subblockSelect" title="Unterblock (Zeilen x Spalten)">
+          <!-- dynamisch gefüllt -->
+        </select>
+      </label>
+      <label data-i18n-label="difficultyLabel">Schwierigkeit:
+        <select id="difficultySelect">
+          <option value="very-easy" data-i18n="diffVeryEasy">Sehr einfach</option>
+          <option value="easy" data-i18n="diffEasy" selected>Einfach</option>
+          <option value="medium" data-i18n="diffMedium">Mittel</option>
+          <option value="hard" data-i18n="diffHard">Schwer</option>
+          <option value="very-hard" data-i18n="diffVeryHard">Sehr schwer</option>
+          <option value="custom" data-i18n="diffCustom">Benutzerdefiniert</option>
+        </select>
+      </label>
+      <span id="customDifficultyWrapper" class="hidden">
+        <label data-i18n-label="customCluesLabel">Min. Hinweise <input type="number" id="customClues" min="5" value="30" style="width:5rem"></label>
+      </span>
+      <button id="newBtn" data-i18n="btnNew">Neu</button>
+      <button id="resetBtn" data-i18n="btnReset">Zurücksetzen</button>
+      <button id="checkBtn" data-i18n="btnCheck">Prüfen</button>
+      <button id="cleanErrorsBtn" data-i18n="btnClean" title="Falsche Eingaben löschen">Fehler entfernen</button>
+      <label class="inline" data-i18n-wrapper="autoCheck"><input type="checkbox" id="autoCheck" /> <span data-i18n="autoCheckLabel">Fehler automatisch prüfen</span></label>
+      <label class="inline" data-i18n-wrapper="highlightSimilar"><input type="checkbox" id="highlightSimilar" checked /> <span data-i18n="highlightSimilarLabel">Gleiche Zahlen hervorheben</span></label>
+      <button id="solveBtn" data-i18n="btnSolve" title="(Nur Demo / Debug)">Lösen</button>
+  <button id="themeToggle" title="Theme" aria-label="Theme">🌓</button>
+  <button id="rulesBtn" aria-label="Rules" class="mini-icon">ⓘ</button>
+  <button id="infoBtn" aria-label="Info" class="mini-icon">🔗</button>
+  </div>
+  </header>
+
+  <main>
+    <section class="board-wrapper">
+  <noscript>JavaScript ist erforderlich.</noscript>
+  <div id="bootWarning" class="hidden" style="max-width:420px;background:#5f2d34;padding:.75rem .9rem;border:1px solid #aa4d58;border-radius:8px;font-size:.75rem;line-height:1.3">Module konnten nicht geladen werden. Öffne die Seite über einen lokalen Server (z.B. <code>python3 -m http.server</code>) statt direkt über das Dateisystem.</div>
+  <div id="board" class="board" aria-label="Sudoku Brett"><div class="loading-placeholder">Wird geladen...</div></div>
+      <div class="mode-toggle">
+  <button id="penModeBtn" class="active" data-i18n="penMode">Stift</button>
+  <button id="noteModeBtn" data-i18n="noteMode">Notiz</button>
+      </div>
+      <div class="number-pad" id="numberPad"></div>
+      <div class="info-bar">
+  <span id="statusMsg" data-i18n="statusReady">Bereit.</span>
+        <span id="timer">00:00</span>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="src/main.js"></script>
+    <script>setTimeout(()=>{if(!window.__SUDOKU_BOOTED){document.getElementById('bootWarning').classList.remove('hidden');}},500);</script>
+</body>
+</html>
