@@ -242,6 +242,17 @@ async function init() {
   initializeReportRange();
   dom.workPlanInput.value = state.workPlan || "";
   renderAll();
+  registerServiceWorker();
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
+
+  navigator.serviceWorker.register("./sw.js").catch((error) => {
+    console.warn("Service Worker konnte nicht registriert werden:", error);
+  });
 }
 
 function cacheDom() {
@@ -1885,6 +1896,11 @@ function seedMockupEntries() {
   if (!confirmed) {
     return;
   }
+
+  state.workPlan = "9/9/9/9";
+  saveToStorage(STORAGE_KEYS.workPlan, state.workPlan);
+  dom.workPlanInput.value = state.workPlan;
+  dom.workPlanStatus.textContent = "Arbeitsplan automatisch auf 9/9/9/9 gesetzt.";
 
   const now = new Date();
   const monthConfigs = buildSeedMonthConfigs(now);

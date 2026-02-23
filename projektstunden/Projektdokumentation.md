@@ -365,3 +365,31 @@ Dieser Abschnitt enthält Umsetzungswissen aus dem bisherigen Projektverlauf, da
 - Assistent: **GitHub Copilot**
 - Verwendetes Modell: **GPT-5.3-Codex**
 - Dokumentationsstand dieser Datei: **18.02.2026**
+
+## 8. Nachtrag (Stand: 23.02.2026)
+
+Dieser Nachtrag ergänzt ausschließlich neue Änderungen seit dem letzten Dokumentationsstand, ohne bestehende Inhalte zu ersetzen.
+
+### 8.1 UI-Feintuning Kalender („Frei“-Marker)
+
+- Darstellung des Labels **„Frei“** in Kalendertagen mit manuell gesetztem freien Tag weiter entschärft:
+  - reduzierte visuelle Dominanz (leichtere Typografie),
+  - linksbündige Positionierung direkt unterhalb der Tageszahl,
+  - zusätzliche mikrofeine Positionsanpassung (ca. +5 px vertikal, +2 px horizontal).
+- Ziel: bessere Lesbarkeit ohne Überlagerung mit Datum oder Statuspunkten.
+
+### 8.2 Indexierungs-Schutz (SEO/Crawler)
+
+Zur Vermeidung einer Suchmaschinen-Indexierung im aktuellen Tool-Stand wurden zwei Schutzmaßnahmen ergänzt:
+
+- In `index.html` im `<head>`:
+  - `<meta name="robots" content="noindex, nofollow" />`
+
+- Neue Datei im Projektroot:
+  - `robots.txt` mit
+    - `User-agent: *`
+    - `Disallow: /`
+
+Einordnung:
+- Diese Maßnahmen sind für statische Deployments sinnvoll, wenn die Seite nicht öffentlich indexiert werden soll.
+
