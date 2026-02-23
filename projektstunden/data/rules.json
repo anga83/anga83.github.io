@@ -28,7 +28,7 @@
       "trigger": {
         "locationEquals": "Quallenstadt"
       },
-      "message": "Für <strong><Ort></strong> ist ein Kommentar immer verpflichtend. Bitte beschreibe deine Tätigkeiten kurz."
+      "message": "Für <strong><Ort></strong> ist ein Kommentar verpflichtend. Bitte beschreibe deine Tätigkeiten kurz."
     }
   ]
 }
