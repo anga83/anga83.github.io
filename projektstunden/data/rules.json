@@ -28,7 +28,7 @@
       "trigger": {
         "locationEquals": "Quallenstadt"
       },
-      "message": "Für <strong><Ort></strong> ist ein Kommentar immer verpflichtend. Bitte begründe die Buchung kurz, unabhängig von Abteilung und Kostenträger."
+      "message": "Für <strong><Ort></strong> ist ein Kommentar immer verpflichtend. Bitte beschreibe deine Tätigkeiten kurz."
     }
   ]
 }
