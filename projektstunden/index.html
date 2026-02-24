@@ -23,7 +23,7 @@
       <div class="catalyst-sidebar-header">
         <div class="catalyst-sidebar-brand">
           <div class="brand-row">
-            <span class="app-icon" aria-hidden="true"><i class="fa-solid fa-stopwatch"></i></span>
+            <span class="app-icon" aria-hidden="true"><img src="./assets/icons/icon-192.svg" alt="" /></span>
             <h1>Projektstundenerfassung</h1>
           </div>
         </div>
@@ -38,6 +38,10 @@
               <i class="fa-regular fa-moon theme-icon theme-icon-moon" aria-hidden="true"></i>
             </span>
           </label>
+          <button id="openNotificationsBtn" type="button" class="icon-btn catalyst-notification-btn" aria-label="Benachrichtigungen öffnen">
+            <i class="fa-regular fa-bell" aria-hidden="true"></i>
+            <span id="notificationsBadge" class="notification-badge">1</span>
+          </button>
         </div>
         <div class="catalyst-sidebar-spacer" aria-hidden="true"></div>
         <div class="catalyst-sidebar-actions">
@@ -146,7 +150,6 @@
               <span>Stunden</span>
               <input id="hoursInput" type="text" placeholder="z.B. 3,5" inputmode="decimal" required />
               <div id="hoursQuickChips" class="hours-quick-chips"></div>
-              <small>Ganzzahl oder Dezimalzahl (Komma/Punkt möglich)</small>
             </label>
 
             <label class="full-width">
@@ -207,7 +210,7 @@
             <div id="qualityChart" class="quality-chart" role="img" aria-label="Buchungsgüte-Diagramm">
               <span id="qualityChartCenter">0%</span>
             </div>
-            <small class="muted">Soll-Abdeckung</small>
+            <small class="muted">Anteil Projektstunden</small>
           </div>
           <div class="quality-chart-block">
             <div id="qualityCompletenessChart" class="quality-chart quality-chart-status" role="img" aria-label="Vollständigkeitsstatus">
@@ -260,9 +263,46 @@
         <button id="dismissDuplicateEntryBtn" type="button" class="icon-btn" aria-label="Schließen">✕</button>
       </div>
       <p class="muted">Für diesen Tag gibt es bereits eine Buchung mit gleichem Ort und Kostenträger.</p>
+      <div id="duplicateEntryPreview" class="duplicate-entry-preview"></div>
       <div class="form-actions">
         <button id="combineDuplicateEntryBtn" type="button" class="btn btn-primary">Mit anderem Eintrag kombinieren</button>
         <button id="discardDuplicateEntryBtn" type="button" class="btn btn-ghost">Verwerfen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sqlInjectionPopover" class="popover hidden" role="dialog" aria-modal="true" aria-labelledby="sqlInjectionTitle">
+    <div class="popover-card" style="width:min(460px, calc(100% - 32px));">
+      <div class="popover-head">
+        <h3 id="sqlInjectionTitle">Nice try 👍</h3>
+        <button type="button" class="icon-btn" data-close="sqlInjectionPopover" aria-label="Schließen">✕</button>
+      </div>
+      <p class="muted">Die Eingabe enthält ein Muster, das wie ein SQL-Injection-Versuch aussieht.</p>
+      <div class="form-actions">
+        <button id="dismissSqlInjectionBtn" type="button" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="notificationsPopover" class="popover hidden" role="dialog" aria-modal="true" aria-labelledby="notificationsTitle">
+    <div class="popover-card" style="width:min(520px, calc(100% - 32px));">
+      <div class="popover-head">
+        <h3 id="notificationsTitle">Benachrichtigung</h3>
+        <button type="button" class="icon-btn" data-close="notificationsPopover" aria-label="Schließen">✕</button>
+      </div>
+      <div class="notification-update-card">
+        <h4 id="notificationsUpdateTitle">Update Buchungshinweise ausgerollt</h4>
+        <p class="muted">Bitte mache dich mit den aktualisierten Buchungshinweisen vertraut.</p>
+        <p class="notification-update-subtitle muted">Kurzzusammenfassung:</p>
+        <ul class="notification-update-list muted">
+          <li>Hinweise zur Kommentarpflicht wurden präzisiert.</li>
+          <li>Beispiele für zulässige Kostenträger wurden ergänzt.</li>
+          <li>Formulierungen bei Regelwarnungen wurden verständlicher gefasst.</li>
+        </ul>
+        <p class="muted">Ausgerollt am: <strong id="notificationsUpdateDate">-</strong></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" data-close="notificationsPopover">Verstanden</button>
       </div>
     </div>
   </div>

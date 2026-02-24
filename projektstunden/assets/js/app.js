@@ -46,7 +46,8 @@ const STORAGE_KEYS = {
   favorites: "project-hours-mockup-favorites",
   workPlan: "project-hours-mockup-work-plan",
   manualFreeDays: "project-hours-mockup-manual-free-days",
-  theme: "project-hours-mockup-theme"
+  theme: "project-hours-mockup-theme",
+  bookingHintsNotificationSeen: "project-hours-mockup-booking-hints-notification-seen"
 };
 
 const FAVORITE_COLORS = [
@@ -55,6 +56,25 @@ const FAVORITE_COLORS = [
   "#E5F7C8", "#DDE6FF", "#FFDACC", "#D6F3ED",
   "#E8E1D4", "#F6D8FF", "#E2F1DA", "#F6E6B8"
 ];
+
+const FAVORITE_COLOR_LABELS = {
+  "#D8EAFE": "Hellblau",
+  "#CFF2E1": "Mint",
+  "#FFE9C7": "Apricot",
+  "#FFD8E2": "Rosa",
+  "#E4DBFF": "Lavendel",
+  "#FFE2F0": "Rosé",
+  "#D7F0FF": "Himmelblau",
+  "#FEE6C6": "Pfirsich",
+  "#E5F7C8": "Lindgrün",
+  "#DDE6FF": "Pastellblau",
+  "#FFDACC": "Lachs",
+  "#D6F3ED": "Türkis",
+  "#E8E1D4": "Sand",
+  "#F6D8FF": "Flieder",
+  "#E2F1DA": "Salbei",
+  "#F6E6B8": "Vanille"
+};
 
 const FAVORITE_ICONS = [
   { id: "bolt", className: "fa-solid fa-bolt", label: "Energie" },
@@ -91,14 +111,27 @@ const LEGACY_FAVORITE_ICON_MAP = {
 };
 
 const BOOKING_HINTS_MERMAID_SOURCE = `flowchart TD
-  A["Ort waehlen"] --> B{"Kostentraeger gewaehlt"}
-  B -- Nein --> C["Bitte Kostentraeger waehlen"]
+  A["Ort wählen"] --> B{"Kostenträger gewählt"}
+  B -- Nein --> C["Bitte Kostenträger wählen"]
   B -- Ja --> D{"Regel aktiv"}
-  D -- Ja --> E["Hinweis pruefen"]
+  D -- Ja --> E["Hinweis prüfen"]
   E --> F{"Kommentar Pflicht"}
-  F -- Ja --> G["Kommentar ergaenzen"]
+  F -- Ja --> G["Kommentar ergänzen"]
   F -- Nein --> H["Buchung speichern"]
   D -- Nein --> H`;
+
+const SQL_INJECTION_PATTERNS = [
+  /['"`]\s*(or|and)\s+['"`]?\w+['"`]?\s*=\s*['"`]?\w+/i,
+  /\bunion\b[\s\S]{0,24}\bselect\b/i,
+  /\b(drop|truncate)\b\s+\b(table|database)\b/i,
+  /\binformation_schema\b/i,
+  /\bxp_cmdshell\b/i,
+  /;\s*(select|insert|update|delete|drop|truncate)\b/i,
+  /;\s*--/,
+  /['"`]\s*--/,
+  /\/\*[\s\S]*\*\//,
+  /\b(sleep|benchmark)\s*\(/i
+];
 
 const REPORT_MONTH_LABELS = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
@@ -203,6 +236,7 @@ const state = {
   workPlan: loadFromStorage(STORAGE_KEYS.workPlan, ""),
   manualFreeDays: loadFromStorage(STORAGE_KEYS.manualFreeDays, []),
   theme: loadFromStorage(STORAGE_KEYS.theme, "light"),
+  bookingHintsNotificationSeen: loadFromStorage(STORAGE_KEYS.bookingHintsNotificationSeen, false),
   editingEntryId: null,
   activeRule: null,
   activeFavoriteColorTargetId: null,
@@ -293,6 +327,9 @@ function cacheDom() {
   dom.combineDuplicateEntryBtn = document.getElementById("combineDuplicateEntryBtn");
   dom.discardDuplicateEntryBtn = document.getElementById("discardDuplicateEntryBtn");
   dom.dismissDuplicateEntryBtn = document.getElementById("dismissDuplicateEntryBtn");
+  dom.duplicateEntryPreview = document.getElementById("duplicateEntryPreview");
+  dom.sqlInjectionPopover = document.getElementById("sqlInjectionPopover");
+  dom.dismissSqlInjectionBtn = document.getElementById("dismissSqlInjectionBtn");
 
   dom.userProfileTrigger = document.getElementById("userProfileTrigger");
   dom.settingsPopover = document.getElementById("settingsPopover");
@@ -312,6 +349,10 @@ function cacheDom() {
   dom.controllerShowExportBtn = document.getElementById("controllerShowExportBtn");
 
   dom.openReportBtn = document.getElementById("openReportBtn");
+  dom.openNotificationsBtn = document.getElementById("openNotificationsBtn");
+  dom.notificationsBadge = document.getElementById("notificationsBadge");
+  dom.notificationsPopover = document.getElementById("notificationsPopover");
+  dom.notificationsUpdateDate = document.getElementById("notificationsUpdateDate");
   dom.themeToggleSwitch = document.getElementById("themeToggleSwitch");
   dom.bookingHintsPopover = document.getElementById("bookingHintsPopover");
   dom.bookingHintsRulesBody = document.getElementById("bookingHintsRulesBody");
@@ -419,6 +460,11 @@ function registerEvents() {
     openPopover(dom.reportPopover);
     renderReportPreview();
   });
+  dom.openNotificationsBtn.addEventListener("click", () => {
+    renderNotificationsPopover();
+    markBookingHintsNotificationAsRead();
+    openPopover(dom.notificationsPopover);
+  });
   dom.themeToggleSwitch.addEventListener("change", () => {
     applyTheme(dom.themeToggleSwitch.checked ? "dark" : "light");
   });
@@ -462,6 +508,7 @@ function registerEvents() {
   dom.combineDuplicateEntryBtn.addEventListener("click", combinePendingDuplicateEntry);
   dom.discardDuplicateEntryBtn.addEventListener("click", discardPendingDuplicateEntry);
   dom.dismissDuplicateEntryBtn.addEventListener("click", discardPendingDuplicateEntry);
+  dom.dismissSqlInjectionBtn.addEventListener("click", () => closePopover(dom.sqlInjectionPopover));
 
   dom.commentInput.addEventListener("focus", () => renderCommentSuggestions());
   dom.commentInput.addEventListener("click", () => renderCommentSuggestions());
@@ -477,11 +524,12 @@ function registerEvents() {
     });
   });
 
-  [dom.favoritesPopover, dom.bookingHintsPopover, dom.reportPopover, dom.settingsPopover, dom.duplicateEntryPopover].forEach((popover) => {
+  [dom.favoritesPopover, dom.bookingHintsPopover, dom.reportPopover, dom.settingsPopover, dom.duplicateEntryPopover, dom.sqlInjectionPopover, dom.notificationsPopover].forEach((popover) => {
     popover.addEventListener("click", (event) => {
       if (event.target === popover) {
         if (popover === dom.duplicateEntryPopover) {
           state.pendingDuplicateResolution = null;
+          clearDuplicateEntryPreview();
         }
         closePopover(popover);
       }
@@ -519,6 +567,8 @@ function registerEvents() {
 }
 
 function renderAll() {
+  renderNotificationsBadge();
+
   if (state.controllerMode) {
     renderControllerDashboard();
     return;
@@ -532,6 +582,42 @@ function renderAll() {
   evaluateRulesAndBanner();
   renderQualityWidget();
   renderReportPreview();
+}
+
+function renderNotificationsPopover() {
+  if (!dom.notificationsUpdateDate) {
+    return;
+  }
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  dom.notificationsUpdateDate.textContent = yesterday.toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+}
+
+function renderNotificationsBadge() {
+  if (!dom.notificationsBadge) {
+    return;
+  }
+  dom.notificationsBadge.classList.toggle("hidden", state.bookingHintsNotificationSeen);
+}
+
+function markBookingHintsNotificationAsRead() {
+  if (state.bookingHintsNotificationSeen) {
+    return;
+  }
+  state.bookingHintsNotificationSeen = true;
+  saveToStorage(STORAGE_KEYS.bookingHintsNotificationSeen, true);
+  renderNotificationsBadge();
+}
+
+function resetBookingHintsNotification() {
+  state.bookingHintsNotificationSeen = false;
+  saveToStorage(STORAGE_KEYS.bookingHintsNotificationSeen, false);
+  renderNotificationsBadge();
 }
 
 function populateLocationSelect() {
@@ -791,6 +877,11 @@ function onSubmitEntry(event) {
   const rawHours = dom.hoursInput.value;
   const comment = dom.commentInput.value.trim();
 
+  if (containsLikelySqlInjection(rawHours, comment)) {
+    openPopover(dom.sqlInjectionPopover);
+    return;
+  }
+
   if (!location || !costCenter) {
     alert("Bitte Ort und Kostenträger wählen.");
     return;
@@ -825,12 +916,23 @@ function onSubmitEntry(event) {
     updatedAt: new Date().toISOString()
   };
 
+  const plannedHoursOverrun = getPlannedHoursOverrunWarning(payload);
+  if (plannedHoursOverrun) {
+    const proceed = confirm(
+      `Plausibilitätswarnung: Mit dieser Buchung würdest du die Sollarbeitszeit überschreiten.\n\nSoll: ${formatHours(plannedHoursOverrun.plannedHours)} h\nNeu: ${formatHours(plannedHoursOverrun.projectedHours)} h\nÜberschreitung: +${formatHours(plannedHoursOverrun.overrunHours)} h\n\nTrotzdem speichern?`
+    );
+    if (!proceed) {
+      return;
+    }
+  }
+
   const duplicateEntry = findDuplicateEntryForPayload(payload);
   if (duplicateEntry) {
     state.pendingDuplicateResolution = {
       payload,
       duplicateEntryId: duplicateEntry.id
     };
+    renderDuplicateEntryPreview(duplicateEntry, payload);
     openPopover(dom.duplicateEntryPopover);
     return;
   }
@@ -845,6 +947,35 @@ function findDuplicateEntryForPayload(payload) {
     && entry.costCenterId === payload.costCenterId
     && entry.id !== payload.id
   ));
+}
+
+function getPlannedHoursOverrunWarning(payload) {
+  if (!payload || !payload.date) {
+    return null;
+  }
+
+  const dateObj = fromIsoDate(payload.date);
+  const plannedHours = getPlannedHoursForDate(dateObj, payload.date);
+  if (plannedHours === null) {
+    return null;
+  }
+
+  const baseHours = getEntriesForDate(payload.date)
+    .filter((entry) => entry.id !== payload.id)
+    .reduce((sum, entry) => sum + Number(entry.hoursValue || 0), 0);
+  const projectedHours = baseHours + Number(payload.hoursValue || 0);
+  const overrunHours = projectedHours - Number(plannedHours || 0);
+
+  return overrunHours > 0.001
+    ? { plannedHours: Number(plannedHours || 0), projectedHours, overrunHours }
+    : null;
+}
+
+function containsLikelySqlInjection(...values) {
+  return values.some((value) => {
+    const input = String(value || "").trim();
+    return input && SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(input));
+  });
 }
 
 function persistEntryPayload(payload) {
@@ -864,6 +995,7 @@ function persistEntryPayload(payload) {
 
 function combinePendingDuplicateEntry() {
   if (!state.pendingDuplicateResolution) {
+    clearDuplicateEntryPreview();
     closePopover(dom.duplicateEntryPopover);
     return;
   }
@@ -872,6 +1004,7 @@ function combinePendingDuplicateEntry() {
   const target = state.entries.find((entry) => entry.id === duplicateEntryId);
   if (!target) {
     state.pendingDuplicateResolution = null;
+    clearDuplicateEntryPreview();
     closePopover(dom.duplicateEntryPopover);
     return;
   }
@@ -891,6 +1024,7 @@ function combinePendingDuplicateEntry() {
 
   saveToStorage(STORAGE_KEYS.entries, state.entries);
   state.pendingDuplicateResolution = null;
+  clearDuplicateEntryPreview();
   closePopover(dom.duplicateEntryPopover);
   dom.hoursInput.value = "";
   dom.commentInput.value = "";
@@ -901,7 +1035,44 @@ function combinePendingDuplicateEntry() {
 
 function discardPendingDuplicateEntry() {
   state.pendingDuplicateResolution = null;
+  clearDuplicateEntryPreview();
   closePopover(dom.duplicateEntryPopover);
+}
+
+function renderDuplicateEntryPreview(existingEntry, pendingPayload) {
+  if (!dom.duplicateEntryPreview) {
+    return;
+  }
+
+  const currentHours = Number(existingEntry?.hoursValue);
+  const deltaHours = Number(pendingPayload?.hoursValue);
+  const safeCurrentHours = Number.isFinite(currentHours) ? currentHours : 0;
+  const safeDeltaHours = Number.isFinite(deltaHours) ? deltaHours : 0;
+  const nextHours = safeCurrentHours + safeDeltaHours;
+  const deltaPrefix = safeDeltaHours >= 0 ? "+" : "−";
+
+  dom.duplicateEntryPreview.innerHTML = `
+    <div class="duplicate-entry-card">
+      <div class="duplicate-entry-head">
+        <div>
+          <strong>${escapeHtml(existingEntry?.location || "Unbekannter Ort")}</strong>
+          <div class="muted">${escapeHtml(existingEntry?.costCenterName || "Unbekannter Kostenträger")}</div>
+        </div>
+        <span class="duplicate-current-hours">${formatHours(safeCurrentHours)} h</span>
+      </div>
+      <div class="duplicate-entry-impact">
+        <span class="duplicate-delta-chip">${deltaPrefix} ${formatHours(Math.abs(safeDeltaHours))} h</span>
+        <span class="muted">Neu: ${formatHours(nextHours)} h</span>
+      </div>
+    </div>
+  `;
+}
+
+function clearDuplicateEntryPreview() {
+  if (!dom.duplicateEntryPreview) {
+    return;
+  }
+  dom.duplicateEntryPreview.innerHTML = "";
 }
 
 function mergeComments(left, right) {
@@ -1422,7 +1593,7 @@ function renderFavorites() {
   dom.favoritesList.querySelectorAll("button[data-fav-color-open]").forEach((button) => {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      openFavoriteColorPicker(button.dataset.favColorOpen, button);
+      openFavoriteColorPicker(button.dataset.favColorOpen, button, event);
     });
   });
 
@@ -1705,17 +1876,19 @@ function getCommentSuggestions(currentValue, limit = 8) {
   return [...new Set(prioritized)].slice(0, limit);
 }
 
-function openFavoriteColorPicker(favoriteId, triggerButton) {
+function openFavoriteColorPicker(favoriteId, triggerButton, pointerEvent = null) {
   state.activeFavoriteColorTargetId = favoriteId;
 
   const rect = triggerButton.getBoundingClientRect();
   dom.favoriteColorPicker.innerHTML = FAVORITE_COLORS
-    .map((color) => `<button type="button" class="color-swatch" data-color-value="${color}" style="--swatch:${color}" aria-label="${color}"></button>`)
+    .map((color) => {
+      const colorLabel = getFavoriteColorLabel(color);
+      return `<button type="button" class="color-swatch" data-color-value="${color}" data-color-name="${escapeHtml(colorLabel)}" style="--swatch:${color}" aria-label="${escapeHtml(colorLabel)}"></button>`;
+    })
     .join("");
 
   dom.favoriteColorPicker.classList.remove("hidden");
-  dom.favoriteColorPicker.style.left = `${rect.left}px`;
-  dom.favoriteColorPicker.style.top = `${rect.bottom + 8}px`;
+  positionFavoriteColorPicker(rect, pointerEvent);
 
   dom.favoriteColorPicker.querySelectorAll("button[data-color-value]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1729,6 +1902,36 @@ function closeFavoriteColorPicker() {
   state.activeFavoriteColorTargetId = null;
   dom.favoriteColorPicker.classList.add("hidden");
   dom.favoriteColorPicker.innerHTML = "";
+}
+
+function positionFavoriteColorPicker(triggerRect, pointerEvent = null) {
+  const spacing = 8;
+  const viewportPadding = 10;
+  const pickerRect = dom.favoriteColorPicker.getBoundingClientRect();
+  const hasPointerCoords = pointerEvent
+    && Number.isFinite(pointerEvent.clientX)
+    && Number.isFinite(pointerEvent.clientY)
+    && !(pointerEvent.clientX === 0 && pointerEvent.clientY === 0);
+  const anchorX = hasPointerCoords ? pointerEvent.clientX : triggerRect.left;
+  const anchorY = hasPointerCoords ? pointerEvent.clientY : triggerRect.bottom;
+
+  const maxLeft = window.innerWidth - viewportPadding - pickerRect.width;
+  const safeMaxLeft = Math.max(viewportPadding, maxLeft);
+  const preferredLeft = anchorX - 14;
+  const left = Math.min(Math.max(preferredLeft, viewportPadding), safeMaxLeft);
+
+  const belowTop = anchorY + spacing;
+  const aboveTop = anchorY - pickerRect.height - spacing;
+  const canPlaceBelow = belowTop + pickerRect.height <= window.innerHeight - viewportPadding;
+  const canPlaceAbove = aboveTop >= viewportPadding;
+  const proposedTop = canPlaceBelow || !canPlaceAbove ? belowTop : aboveTop;
+
+  const maxTop = window.innerHeight - viewportPadding - pickerRect.height;
+  const safeMaxTop = Math.max(viewportPadding, maxTop);
+  const top = Math.min(Math.max(proposedTop, viewportPadding), safeMaxTop);
+
+  dom.favoriteColorPicker.style.left = `${left}px`;
+  dom.favoriteColorPicker.style.top = `${top}px`;
 }
 
 function updateFavoriteAppearance(favoriteId, changes) {
@@ -1750,6 +1953,10 @@ function updateFavoriteAppearance(favoriteId, changes) {
 
 function getFavoriteColor(color) {
   return FAVORITE_COLORS.includes(color) ? color : FAVORITE_COLORS[0];
+}
+
+function getFavoriteColorLabel(color) {
+  return FAVORITE_COLOR_LABELS[color] || "Farbe";
 }
 
 function getFavoriteIconId(icon) {
@@ -1877,6 +2084,7 @@ function clearMockupStorage() {
   state.manualFreeDays = [];
   state.editingEntryId = null;
   state.activeRule = null;
+  state.bookingHintsNotificationSeen = false;
 
   applyTheme("light");
   dom.workPlanInput.value = "";
@@ -1995,6 +2203,7 @@ function seedMockupEntries() {
   }
 
   state.calendarMonth = new Date(currentMonth.year, currentMonth.month, 1);
+  resetBookingHintsNotification();
   resetEditMode();
   renderAll();
   alert(`Mockup-Daten erzeugt: ${generatedEntries.length} Einträge${seededFavorites.length ? ` und ${seededFavorites.length} Schnellfavoriten` : ""}`);

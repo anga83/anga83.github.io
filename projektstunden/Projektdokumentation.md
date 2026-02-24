@@ -366,7 +366,7 @@ Dieser Abschnitt enthält Umsetzungswissen aus dem bisherigen Projektverlauf, da
 - Verwendetes Modell: **GPT-5.3-Codex**
 - Dokumentationsstand dieser Datei: **18.02.2026**
 
-## 8. Nachtrag (Stand: 23.02.2026)
+## 8. Nachtrag (Stand: 24.02.2026)
 
 Dieser Nachtrag ergänzt ausschließlich neue Änderungen seit dem letzten Dokumentationsstand, ohne bestehende Inhalte zu ersetzen.
 
@@ -393,3 +393,14 @@ Zur Vermeidung einer Suchmaschinen-Indexierung im aktuellen Tool-Stand wurden zw
 Einordnung:
 - Diese Maßnahmen sind für statische Deployments sinnvoll, wenn die Seite nicht öffentlich indexiert werden soll.
 
+### 8.3 Responsive-Feintuning für große Monitore
+
+- Layout-Anpassung für breite Viewports, damit der Kalender seine visuelle Form beibehält und die Datums-Kacheln nicht unverhältnismäßig breit wirken.
+- Umsetzung in `assets/css/styles.css` über eine zusätzliche Media Query:
+  - ab `min-width: 1760px`,
+  - nur außerhalb des Controller-Modus (`.catalyst-app:not(.controller-mode)`),
+  - Grid-Spalten: `minmax(0, 1fr) minmax(340px, 28%)`.
+- Wirkung:
+  - rechte Spalte (Kalender + Buchungsgüte) bleibt auf großen Monitoren proportional begrenzt (max. 28 %),
+  - zusätzliche Breite fließt primär in den mittleren/ linken Inhaltsbereich (Eingabemaske + Daily Log).
+- Auf kleineren Bildschirmen bleibt das bisherige Verhalten unverändert (bestehende Breakpoints bleiben bestehen).
