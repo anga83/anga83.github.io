@@ -457,7 +457,7 @@ const wordOperators = new Set(["in", "to", "as", "zu", "als", "of", "von", "on",
 const operatorWordTestRegex = /^(?:in|to|as|zu|als|of|von|on|off|plus|minus|mal|min|max)$/iu;
 const numberTokenRegex = /^(?:\d[\d.,']*|[.,]\d+)%?$/u;
 const booleanTokenRegex = /^(?:true|false|wahr|falsch)$/iu;
-const highlightTokenRegex = /(>=|<=|==|!=|[+\-*/^()<>=%;,]|@\d+|\b(?:in|to|as|zu|als|of|von|on|off|plus|minus|mal|min|max)\b|\b(?:true|false|wahr|falsch)\b|(?:\d[\d.,']*|[.,]\d+)%?)/giu;
+const highlightTokenRegex = /(>=|<=|==|!=|[+\-*/^()<>=%;,?:]|@\d+|\b(?:in|to|as|zu|als|of|von|on|off|plus|minus|mal|min|max)\b|\b(?:true|false|wahr|falsch)\b|(?:\d[\d.,']*|[.,]\d+)%?|[€$£])/giu;
 
 let lastEvaluation = { lineValues: [] };
 let appSettings = loadPersistedSettings();
@@ -1670,6 +1670,15 @@ function expandUnitShorthand(line) {
 }
 
 function maybeStripLabel(line) {
+  // Ternary-Ausdrücke dürfen nicht als "Label: Ausdruck" fehlinterpretiert werden.
+  if (line.includes("?")) {
+    return line;
+  }
+  // Bereichsreferenzen wie "@1:@4" dürfen ebenfalls nicht als Label-Syntax gelten.
+  if (/@\d+\s*:\s*@\d+/u.test(line)) {
+    return line;
+  }
+
   const match = line.match(/^([^:]+):\s*(.+)$/u);
   if (!match) {
     return line;
@@ -1678,6 +1687,75 @@ function maybeStripLabel(line) {
     return line;
   }
   return match[2];
+}
+
+function splitTopLevelTernary(expression) {
+  let depth = 0;
+  let questionIndex = -1;
+
+  for (let i = 0; i < expression.length; i += 1) {
+    const char = expression[i];
+    if (char === "(") {
+      depth += 1;
+      continue;
+    }
+    if (char === ")") {
+      depth = Math.max(0, depth - 1);
+      continue;
+    }
+    if (char === "?" && depth === 0) {
+      questionIndex = i;
+      break;
+    }
+  }
+
+  if (questionIndex === -1) {
+    return null;
+  }
+
+  depth = 0;
+  let nestedQuestions = 0;
+  let colonIndex = -1;
+
+  for (let i = questionIndex + 1; i < expression.length; i += 1) {
+    const char = expression[i];
+    if (char === "(") {
+      depth += 1;
+      continue;
+    }
+    if (char === ")") {
+      depth = Math.max(0, depth - 1);
+      continue;
+    }
+    if (depth !== 0) {
+      continue;
+    }
+    if (char === "?") {
+      nestedQuestions += 1;
+      continue;
+    }
+    if (char === ":") {
+      if (nestedQuestions === 0) {
+        colonIndex = i;
+        break;
+      }
+      nestedQuestions -= 1;
+    }
+  }
+
+  if (colonIndex === -1) {
+    throw new Error("Ternary-Ausdruck unvollständig (':' fehlt)");
+  }
+
+  const condition = expression.slice(0, questionIndex).trim();
+  const whenTrue = expression.slice(questionIndex + 1, colonIndex).trim();
+  const whenFalse = expression.slice(colonIndex + 1).trim();
+
+  if (!condition || !whenTrue || !whenFalse) {
+    throw new Error("Ternary-Ausdruck unvollständig");
+  }
+
+  return { condition, whenTrue, whenFalse };
 }
 
 function getDisplayFractionDigits() {
@@ -1798,13 +1876,16 @@ function classifyHighlightToken(token) {
   if (token.startsWith("@")) {
     return "ref";
   }
+  if (/^[€$£]$/u.test(token)) {
+    return "number";
+  }
   if (numberTokenRegex.test(token)) {
     return "number";
   }
   if (booleanTokenRegex.test(token)) {
     return "boolean";
   }
-  if (operatorWordTestRegex.test(token) || /^(?:>=|<=|==|!=|[+\-*/^()<>=%;,])$/u.test(token)) {
+  if (operatorWordTestRegex.test(token) || /^(?:>=|<=|==|!=|[+\-*/^()<>=%;,?:])$/u.test(token)) {
     return "operator";
   }
   return "plain";
@@ -1981,14 +2062,17 @@ function buildMathJsScope(context, placeholders) {
   const scope = {};
 
   for (const [name, quantity] of placeholders.entries()) {
-    if (!quantity || quantity.unit) {
+    if (!quantity || quantity.unit || quantity.isPercent) {
       return null;
     }
     scope[name.toLowerCase()] = quantity.value;
   }
 
   for (const [normalizedName, variable] of context.variables.entries()) {
-    if (!variable || !variable.quantity || variable.quantity.unit) {
+    if (!variable || !variable.quantity) {
+      continue;
+    }
+    if (variable.quantity.unit || variable.quantity.isPercent) {
       continue;
     }
     scope[normalizedName] = variable.quantity.value;
@@ -1998,7 +2082,7 @@ function buildMathJsScope(context, placeholders) {
     }
   }
 
-  if (context.lastValue && !context.lastValue.unit) {
+  if (context.lastValue && !context.lastValue.unit && !context.lastValue.isPercent) {
     scope.ans = context.lastValue.value;
     scope.last = context.lastValue.value;
   }
@@ -2084,6 +2168,13 @@ function evaluateExpressionWithMathJs(preprocessed, context) {
 }
 
 function evaluateExpression(expression, context) {
+  const ternary = splitTopLevelTernary(expression);
+  if (ternary) {
+    const conditionResult = evaluateExpression(ternary.condition, context);
+    const conditionValue = toNumericValue(toArithmeticQuantity(conditionResult));
+    return evaluateExpression(conditionValue !== 0 ? ternary.whenTrue : ternary.whenFalse, context);
+  }
+
   const preprocessed = preprocessExpression(expression, context.variables, context.lineValues);
 
   if (shouldTryMathJs(preprocessed)) {
